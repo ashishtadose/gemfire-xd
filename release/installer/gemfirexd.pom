@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.pivotal.gemfirexd</groupId>
+  <artifactId>gemfirexd</artifactId>
+  <name>GemFireXD</name>
+  <version>__MAVEN_GEMFIREXD_VERSION__</version>
+  <description>Pivotal GemFire XD</description>
+  <url>http://www.pivotal.io/products/pivotal-gemfire</url>
+
+  <issueManagement>
+    <system>Pivotal Support Services</system>
+    <url>http://pivotal.io/support</url>
+  </issueManagement>
+
+  <organization>
+    <name>Pivotal Software, Inc.</name>
+    <url>http://www.pivotal.io</url>
+  </organization>
+
+  <dependencies>
+    <dependency>
+      <groupId>commons-modeler</groupId>
+      <artifactId>commons-modeler</artifactId>
+      <version>2.0.1</version>
+      <type>jar</type>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+  
+</project>

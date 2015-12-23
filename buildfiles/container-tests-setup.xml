@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="container-tests-setup" xmlns:bundlor="antlib:com.springsource.bundlor.ant">
+
+  <!-- TODO consider breaking application specific container tests setup into seperate Ant build scripts and importing here. -->
+
+  <!-- Phone Directory Service application configuration -->
+  <property name="phonedirectoryservice.bundle.version" value="1.0.0"/>
+  <property name="phonedirectoryservice.package.name" value="phonedirectoryservice"/>
+  <property name="phonedirectoryservice.package.version" value="1.0.0.SNAPSHOT"/>
+  <property name="phonedirectoryservice.package.file.name" value="${phonedirectoryservice.package.name}-${phonedirectoryservice.package.version}"/>
+  <property name="phonedirectoryservice.fragment.bundle.file.name" value="${phonedirectoryservice.package.file.name}-fragment-bundle"/>
+  <property name="phonedirectoryservice.bundle.file.name" value="${phonedirectoryservice.package.file.name}-bundle"/>
+
+  <patternset id="gemfire.tests.container.app.base-classes.pattern">
+      <include name="container/app/dao/**/*.*"/>
+      <include name="container/app/domain/**/*.*"/>
+      <include name="container/app/lang/**/*.*"/>
+      <include name="container/app/remoting/**/*.*"/>
+      <include name="container/app/util/**/*.*"/>
+  </patternset>
+
+  <target name="-phonedirectoryservice-init"
+          description="Initialization logic for the Phone Directory Service application targets."
+          depends="-felix-init, -virgo-init"
+          unless="condition.phonedirectoryservice.inited">
+    <property name="phonedirectoryservice.jar.file" value="${tests.jar.dir}/${phonedirectoryservice.package.file.name}.jar"/>
+    <property name="phonedirectoryservice.bundle.jar.file" value="${tests.jar.dir}/${phonedirectoryservice.bundle.file.name}.jar"/>
+    <property name="phonedirectoryservice.fragment.bundle.jar.file" value="${tests.jar.dir}/${phonedirectoryservice.fragment.bundle.file.name}.jar"/>
+
+    <condition property="condition.phonedirectoryservice.artifacts.up-to-date" value="true">
+      <and>
+        <available file="${phonedirectoryservice.jar.file}" type="file"/>
+        <available file="${phonedirectoryservice.bundle.jar.file}" type="file"/>
+        <available file="${phonedirectoryservice.fragment.bundle.jar.file}" type="file"/>
+        <uptodate targetfile="${phonedirectoryservice.jar.file}">
+          <srcfiles dir="${tests.src.dir}/container" includes="**/*.*"/>
+        </uptodate>
+        <uptodate targetfile="${phonedirectoryservice.bundle.jar.file}">
+          <srcfiles dir="${tests.src.dir}/container" includes="**/*.*"/>
+        </uptodate>
+        <uptodate targetfile="${phonedirectoryservice.fragment.bundle.jar.file}">
+          <srcfiles dir="${tests.src.dir}/container" includes="**/*.*"/>
+        </uptodate>
+      </and>
+    </condition>
+
+    <property name="condition.phonedirectoryservice.inited" value="true"/>
+  </target>
+
+  <target name="package-phonedirectoryservice"
+          description="Creates a JAR file containing all the classes and resources for the Phone Directory Service application."
+          depends="-phonedirectoryservice-init"
+          unless="condition.phonedirectoryservice.artifacts.up-to-date">
+      <delete file="${phonedirectoryservice.jar.file}" quiet="true" failonerror="false"/>
+
+      <manifestclasspath property="phonedirectoryservice.jar.file.manifest.classpath" jarfile="${phonedirectoryservice.jar.file}">
+          <classpath>
+            <fileset dir="${product.lib.dir}">
+              <include name="**/*.jar"/>
+            </fileset>
+          </classpath>
+      </manifestclasspath>
+
+      <jar destfile="${phonedirectoryservice.jar.file}" index="true" update="false">
+          <fileset dir="${tests.classes.dir}">
+              <patternset refid="gemfire.tests.container.app.base-classes.pattern"/>
+              <include name="container/app/phonedirectory/**/*.class"/>
+          </fileset>
+          <fileset dir="${tests.src.dir}">
+              <include name="container/app/phonedirectory/**/*.*"/>
+              <exclude name="container/app/phonedirectory/**/*.java"/>
+          </fileset>
+          <manifest>
+              <attribute name="Application-Title" value="Phone Directory Service"/>
+              <attribute name="Application-Version" value="${phonedirectoryservice.package.version}"/>
+              <attribute name="Main-Class" value="container.app.phonedirectory.remoting.rmi.PhoneDirectoryServiceExporter"/>
+              <attribute name="Class-Path" value="${phonedirectoryservice.jar.file.manifest.classpath}"/>
+          </manifest>
+      </jar>
+  </target>
+
+  <target name="bundle-phonedirectoryservice"
+          description="Converts the Phone Directory Service application JAR file into an OSGi Bundle."
+          depends="package-phonedirectoryservice"
+          unless="condition.phonedirectoryservice.artifacts.up-to-date">
+      <available file="${phonedirectoryservice.jar.file}" type="file" property="condition.phonedirectoryservice.jar.file.available" value="true"/>
+      <fail unless="${condition.phonedirectoryservice.jar.file.available}" message="The Phone Directory Service application JAR file was not found!"/>
+
+      <delete file="${phonedirectoryservice.bundle.jar.file}" failonerror="false"/>
+
+      <bundlor:bundlor
+               inputPath="${phonedirectoryservice.jar.file}"
+               outputPath="${phonedirectoryservice.bundle.jar.file}"
+               bundleVersion="${phonedirectoryservice.bundle.version}">
+          <property name="gemfire.osgi.version" value="${gemfire.osgi.version}"/>
+          <manifestTemplate>
+Bundle-Vendor: Pivotal Software, Inc.
+Bundle-Copyright: Pivotal Software, Inc. Copyright (c)  2011-2014. All Rights Reserved.
+Bundle-Name: Phone Directory Service GemFire Application
+Bundle-Description: The Phone Directory Service makes use of a GemFire Cache inside an OSGi Container such as Virgo.
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: phonedirectoryservice
+Bundle-Classpath: .
+Bundle-Activator: container.app.phonedirectory.osgi.PhoneDirectoryServiceActivator
+Excluded-Exports: container.app.phonedirectory.dao, container.app.phonedirectory.dao.factory, container.app.phonedirectory.dao.provider, container.app.phonedirectory.osgi.*, container.app.phonedirectory.remoting.*, container.app.phonedirectory.service.*
+Excluded-Imports: com.gemstone.bp.*, com.gemstone.gnu.*, com.gemstone.java.*, com.gemstone.jdbm.*, com.gemstone.org.*
+Import-Template: com.gemstone.gemfire*;version="${gemfire.osgi.version}", org.osgi.framework*;version="[1.5,2)", antlr*;version="[2.7,3)";resolution:=optional, javax.transaction*;resolution:=optional
+          </manifestTemplate>
+      </bundlor:bundlor>
+  </target>
+
+  <target name="create-fragment-bundle-for-phonedirectoryservice"
+          description="Creates a fragment bundle used by GemFire to load classes from the Phone Directory Service application."
+          depends="-phonedirectoryservice-init"
+          unless="condition.phonedirectoryservice.artifacts.up-to-date">
+      <delete file="${phonedirectoryservice.fragment.bundle.jar.file}" failonerror="false"/>
+
+      <jar destfile="${phonedirectoryservice.fragment.bundle.jar.file}" basedir="${tests.classes.dir}" whenmanifestonly="create">
+          <exclude name="**/*"/>
+      </jar>
+
+      <bundlor:bundlor
+               inputPath="${phonedirectoryservice.fragment.bundle.jar.file}"
+               outputPath="${phonedirectoryservice.fragment.bundle.jar.file}"
+               bundleVersion="${phonedirectoryservice.bundle.version}">
+          <property name="gemfire.osgi.version" value="${gemfire.osgi.version}"/>
+          <manifestTemplate>
+Bundle-Vendor: Pivotal Software, Inc.
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: phonedirectoryservice.fragment
+Bundle-Name: Phone Directory Service GemFire Fragment
+Bundle-Description: The Phone Directory Service Fragment Bundle is used by GemFire to load domain classes in the Phone Directory Service app that GemFire stores in the Cache.
+Fragment-Host: com.gemstone.gemfire;bundle-version="${gemfire.osgi.version}"
+Import-Package: container.app.phonedirectory.dao.provider.support;version="[1.0,2)",container.app.phonedirectory.domain;version="[1.0,2)"
+          </manifestTemplate>
+      </bundlor:bundlor>
+  </target>
+
+  <target name="deploy-phonedirectoryservice"
+          description="Deploys the PhoneDirectoryService OSGi-based application using GemFire to all OSGi containers."
+          depends="-is-felix-installed, -is-virgo-installed, bundle-phonedirectoryservice, create-fragment-bundle-for-phonedirectoryservice"
+          extensionOf="-run-container-tests-setup">
+    <!-- Perform Virgo Server Deployment -->
+    <if>
+      <and>
+        <istrue value="${condition.virgo.installed}"/>
+        <not>
+          <istrue value="${skip.virgo.tests}"/>
+        </not>
+      </and>
+      <then>
+        <copy file="${phonedirectoryservice.fragment.bundle.jar.file}" todir="${virgo.usr.repo.dir}" overwrite="true"/>
+        <copy file="${phonedirectoryservice.bundle.jar.file}" todir="${virgo.pickup.dir}" overwrite="true"/>
+       </then>
+    </if>
+
+    <!-- Perform Felix Framework Deployment -->
+    <if>
+      <and>
+        <istrue value="${condition.felix.installed}"/>
+        <not>
+          <istrue value="${skip.felix.tests}"/>
+        </not>
+      </and>
+      <then>
+        <propertyregex property="phonedirectoryservice.fragment.bundle.jar.location" override="true" input="${phonedirectoryservice.fragment.bundle.jar.file}"
+                       regexp="\\" replace="/" casesensitive="true" global="true" defaultValue="${phonedirectoryservice.fragment.bundle.jar.file}"/>
+        <propertyregex property="phonedirectoryservice.bundle.jar.location" override="true" input="${phonedirectoryservice.bundle.jar.file}"
+                       regexp="\\" replace="/" casesensitive="true" global="true" defaultValue="${phonedirectoryservice.bundle.jar.file}"/>
+        <copyReplace src-file="${felix.target.config.file}">
+          <filterset recurse="false">
+            <filter token="FELIX.AUTO.START.1" value="file:${phonedirectoryservice.fragment.bundle.jar.location} file:${phonedirectoryservice.bundle.jar.location} @FELIX.AUTO.START.1@"/>
+          </filterset>
+        </copyReplace>
+      </then>
+    </if>
+  </target>
+
+  <target name="phonedirectoryservice-clean"
+          description="Deletes the Phone Directory Service artifacts from the build output."
+          depends="-phonedirectoryservice-init"
+          extensionOf="run-container-tests-clean">
+    <delete file="${phonedirectoryservice.jar.file}" quiet="true" failonerror="false"/>
+    <delete file="${phonedirectoryservice.bundle.jar.file}" quiet="true" failonerror="false"/>
+    <delete file="${phonedirectoryservice.fragment.bundle.jar.file}" quiet="true" failonerror="false"/>
+  </target>
+
+  <target name="-felix-phonedirectoryservice-bundle-listener"
+          description="Waits for the phonedirectoryservice bundle to start in Felix."
+          depends="-felix-init"
+          extensionOf="-run-container-listeners"
+          if="condition.enable.felix.listeners"
+          unless="skip.felix.tests">
+    <waitfor maxwait="30" maxwaitunit="second" timeoutproperty="condition.felix.phonedirectoryservice.bundle.start.timeout">
+      <and>
+        <available file="${felix.cache.dir}" type="dir"/>
+        <resourcecount when="greater" count="0">
+          <fileset dir="${felix.cache.dir}" includes="**/bundle.location">
+            <contains text="phonedirectoryservice-1.0.0.SNAPSHOT-bundle"/>
+          </fileset>
+        </resourcecount>
+      </and>
+    </waitfor>
+    <!-- TODO replace sleep with a more reliable indication of bundle startup; unfortunately, the wait above is unreliable but indicates the bundle was found by Felix and will be started. -->
+    <sleep seconds="15"/>
+    <echoIf property="condition.felix.phonedirectoryservice.bundle.start.timeout" level="warn">
+The phonedirectoryservice bundle in Felix failed to start within the specified timeout (30 seconds).
+    </echoIf>
+    <echoUnless property="condition.felix.phonedirectoryservice.bundle.start.timeout" level="warn">
+The phonedirectoryservice bundle in Felix should be running.
+    </echoUnless>
+  </target>
+
+  <target name="-virgo-phonedirectoryservice-bundle-listener"
+          description="Waits for the phonedirectoryservice bundle to start in Virgo."
+          depends="-virgo-init"
+          extensionOf="-run-container-listeners"
+          if="condition.enable.virgo.listeners"
+          unless="skip.virgo.tests">
+    <waitfor maxwait="60" maxwaitunit="second" timeoutproperty="condition.virgo.phonedirectoryservice.bundle.start.timeout">
+      <and>
+        <available file="${virgo.log.file}" type="file"/>
+        <resourcecontains resource="${virgo.log.file}" substring="Started bundle 'phonedirectoryservice'" casesensitive="false"/>
+      </and>
+    </waitfor>
+    <echoIf property="condition.virgo.phonedirectoryservice.bundle.start.timeout" level="warn">
+The phonedirectoryservice bundle in Virgo failed to start within the specified timeout (30 seconds).
+    </echoIf>
+    <echoUnless property="condition.virgo.phonedirectoryservice.bundle.start.timeout" level="warn">
+The phonedirectoryservice bundle in Virgo should be running.
+    </echoUnless>
+  </target>
+
+</project>

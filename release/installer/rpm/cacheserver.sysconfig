@@ -1,0 +1,36 @@
+# Service-specific configuration file for cacheserver. This will be sourced by
+# the SysV init script after the global configuration file
+# /etc/vmware/vfabric-gemfire/cacheserver.conf, thus allowing values to be
+# overridden in  a per-service manner.
+#
+# NEVER change the init script itself. To change values for all services make
+# your changes in /etc/vmware/vfabric-gemfire/cacheserver.conf
+#
+# To change values for a specific service make your edits here.
+# To create a new service create a link from /etc/init.d/<your new service> to
+# /etc/init.d/cacheserver (do not copy the init script) and make a copy of the
+# /etc/sysconfig/cacheserver file to /etc/sysconfig/<your new service> and
+# change the property values so the two services won't conflict. Register the
+# new service in the system as usual (see chkconfig and similars).
+#
+
+# Where your cacheserver installation lives
+#CACHESERVER_WORK_DIR="/var/log/vmware/vfabric-gemfire/cacheserver"
+
+# You can pass some parameters to java here if you wish to
+#JAVA_OPTS="-Xmx1024m"
+
+# Use JAVA_OPTS to set java.library.path for libtcnative.so
+#JAVA_OPTS="-DgemfirePropertyFile=/opt/vmware/vfabric-gemfire/@JARNAME@/defaultConfigs/gemfire.properties"
+
+# What user should run cacheserver
+#CACHESERVER_USER="gemfire"
+
+# Location of user classes
+#USER_CLASSES_PATH=""
+
+# Multicast port
+#MCAST_PORT="10333"
+
+# Declarative cache configuration file
+#CACHE_XML_FILE="/opt/vmware/vfabric-gemfire/@JARNAME@/defaultConfigs/cache.xml"

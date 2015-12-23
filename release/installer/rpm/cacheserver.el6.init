@@ -1,0 +1,152 @@
+#!/bin/sh
+#
+# gemfire-cacheserver      This shell script takes care of starting and stopping GemFire CacheServer
+#
+# chkconfig: - 80 20
+# Description: start and stop the gemfire cacheserver
+#
+### BEGIN INIT INFO
+# Provides: gemfire cacheserver
+# Required-Start: $network $syslog
+# Required-Stop: $network  $syslog
+# Default-Start:
+# Default-Stop:
+# Description: start and stop the gemfire cacheserver
+# Short-Description: start and stop the gemfire cacheserver
+### END INIT INFO
+
+## Source function library.
+. /etc/rc.d/init.d/functions
+
+NAME="$(basename $0)"
+unset ISBOOT
+if [ "${NAME:0:1}" = "S" -o "${NAME:0:1}" = "K" ]; then
+    NAME="${NAME:3}"
+    ISBOOT="1"
+fi
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser -s /bin/sh"
+else
+    SU="/bin/su -s /bin/sh"
+fi
+
+# Get the gemfire config
+CACHESERVER_CFG="/etc/vmware/vfabric-gemfire/cacheserver.conf"
+if [ -r "$CACHESERVER_CFG" ]; then
+    . $CACHESERVER_CFG
+fi
+
+# Get instance specific config file
+if [ -r "/etc/sysconfig/${NAME}" ]; then
+    . /etc/sysconfig/${NAME}
+fi
+
+# Cacheserver working directory
+#CACHESERVER_WORK_DIR="/var/log/vmware-gemfire/cacheserver"
+
+# Path to the cacheserver launch script
+#CACHESERVER_SCRIPT="/opt/vmware-gemfire/@JARNAME@/bin/cacheserver"
+
+# Cacheserver program name
+CACHESERVER_PROG="${NAME}"
+        
+# Define the gemfire username
+#CACHESERVER_USER="${GEMFIRE_USER:-gemfire}"
+CACHESERVER_USER="gemfire"
+CACHESERVER_GROUP="vfabric"
+
+CACHESERVER_OPTIONS=""
+
+
+RETVAL="0"
+
+function makeWorkDir() {
+    if [ ! -d "$CACHESERVER_WORK_DIR" ]; then
+        echo "$CACHESERVER_WORK_DIR does not exist, creating"
+        mkdir -p ${CACHESERVER_WORK_DIR}
+        chown ${CACHESERVER_USER}:${CACHESERVER_GROUP} ${CACHESERVER_WORK_DIR}
+    fi
+}
+
+function parseOptions() {
+    options=""
+#    options="$options $(
+#                 awk '!/^#/ && !/^$/ { ORS=" "; print "export ", $0, ";" }' \
+#                 $CACHESERVER_CFG
+#             )"
+    CACHESERVER_OPTIONS="$CACHESERVER_OPTIONS $(
+                           awk '
+                             BEGIN { FS="[\"]+" } 
+                               /^USER_CLASSES_PATH/ {print "-classpath="$2} /^JAVA_OPTS/ { print "-J"$2 } /^MCAST_PORT/ { print "mcast-port="$2 } /^CACHE_XML_FILE/ { print "cache-xml-file="$2 }
+                           ' $CACHESERVER_CFG
+                        )"
+
+    if [ -r "/etc/sysconfig/${NAME}" ]; then
+        CACHESERVER_OPTIONS="$CACHESERVER_OPTIONS $(
+                     awk '
+                         BEGIN { FS="[\"]+" } 
+                         /^USER_CLASSES_PATH/ {print "-classpath="$2} /^JAVA_OPTS/ { print "-J"$2 } /^MCAST_PORT/ { print "mcast-port="$2 } /^CACHE_XML_FILE/ { print "cache-xml-file="$2 }
+                     ' /etc/sysconfig/${NAME}
+                 )"
+    fi
+}
+
+
+# See how we were called.
+function start() {
+    makeWorkDir
+    parseOptions
+    if [ -f "${CACHESERVER_WORK_DIR}/.cacheserver.ser" ]; then
+        echo "cacheserver already started"
+        RETVAL="0"
+    else
+        MY_CACHESERVER_OPTIONS=`echo $CACHESERVER_OPTIONS | sed -e 's/\n//'`
+        $SU - $CACHESERVER_USER -c "/bin/sh ${CACHESERVER_SCRIPT} start -dir=${CACHESERVER_WORK_DIR} ${MY_CACHESERVER_OPTIONS}"
+    fi
+}
+
+function stop() {
+    echo -n "Stopping ${CACHESERVER_PROG}: "
+    makeWorkDir
+    if [ -f "${CACHESERVER_WORK_DIR}/.cacheserver.ser" ]; then
+        $SU - $CACHESERVER_USER -c "/bin/sh ${CACHESERVER_SCRIPT} stop -dir=${CACHESERVER_WORK_DIR}"
+    else
+        RETVAL="0"
+    fi
+}
+
+function status() {
+    makeWorkDir
+    $SU - $CACHESERVER_USER -c "/bin/sh ${CACHESERVER_SCRIPT} status -dir=${CACHESERVER_WORK_DIR}"
+}
+
+function usage()
+{
+   echo "Usage: $0 {start|stop|restart|status}"
+   RETVAL="2"
+}
+
+# See how we were called.
+RETVAL="0"
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    status)
+        status
+        ;;
+    *)
+      usage
+      ;;
+esac
+
+exit $RETVAL

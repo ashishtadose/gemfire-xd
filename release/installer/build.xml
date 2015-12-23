@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is the Ant build file for building GemFire.
+
+     For more information about Ant see:
+
+                    http://jakarta.apache.org/ant
+
+     For more information about JUnit see:
+
+                         http://www.junit.org
+
+-->
+<project default="build" name="opensource">
+  <description>Builds all of the opensource projects from scratch</description>
+
+  <target name="props">
+    <property name="src.dir" value="${basedir}/source"/>
+    <property name="lib.dir" value="${basedir}/lib"/>
+    <property name="classes.dir" value="${basedir}/classes"/>
+    <property name="product.jar" value="${lib.dir}/gemfire.jar"/>
+  </target>
+
+  <target name="clean" depends="props">
+    <delete dir="${classes.dir}"/>
+  </target>
+
+  <target name="build" depends="jgroups, trove"/>
+
+  <target name="create-directories" depends="props">
+    <mkdir dir="${lib.dir}"/>
+    <mkdir dir="${classes.dir}"/>
+  </target>
+
+  <target name="-build" depends="props, create-directories">
+    <javac 
+      source="1.4"
+      debug="on"
+      destdir="${classes.dir}"
+      optimize="off"
+      srcdir="${src.dir}">
+      <include name="${package}/**/*.java"/>
+      <classpath>
+        <pathelement location="${product.jar}"/>
+      </classpath>
+    </javac> 
+    <jar destfile="${output.jar}">
+      <manifest/>
+      <fileset dir="${classes.dir}">
+        <include name="${package}/**/*.class"/>
+      </fileset> 
+      <fileset dir="${src.dir}">
+        <include name="${package}/**/*.txt"/>
+      </fileset> 
+    </jar>
+  </target>
+
+  <target name="jgroups" depends="props">
+    <antcall target="-build">
+      <param name="output.jar" value="${lib.dir}/jgroups.jar"/>
+      <param name="package" value="com/gemstone/org/jgroups"/>
+    </antcall>
+  </target>
+
+  <target name="trove" depends="props">
+    <antcall target="-build">
+      <param name="output.jar" value="${lib.dir}/trove.jar"/>
+      <param name="package" value="com/gemstone/gnu/trove"/>
+    </antcall>
+  </target>
+
+</project>
+

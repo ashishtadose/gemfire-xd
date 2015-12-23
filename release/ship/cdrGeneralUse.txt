@@ -1,0 +1,167 @@
+Be sure to post updated versions of this file to the
+IS web page.
+Keep the GSJ and GSS versions of this file in sync.
+
+Instructions for using the CDR makers for one-off and private projects.
+
+Required: PC running Easy CD Creator.
+
+1) Collect the files to put on the CD.  This can be done two ways and depends
+   partly on what sort of disk you are making.
+   This starts on a UNIX system unless you are making a PC only
+   disk (item C below).
+
+   A) ISO 9660 read anywhere disk.  DOS type 8.3 file names ONLY.
+      This starts on a Solaris UNIX machine to make the .iso image file.
+      (This image file must be copied to the PC after creation.)
+      This format is good when the disk you make must be read on both
+      PC and UNIX and all your info is wrapped inside a set of zip files.
+
+      For example:
+        cd /gcm/where/ship51/scripts     OR
+        cd /gcm/where/shipjv20/scripts   (will work the same)
+        makecdromimage.pl -f -i /jojo5/gs512 -o /jojo3/gs512.iso
+      This invocation follows links and creates the iso image file
+      /jojo3/gs512.iso from the contents of the /jojo5/gs512 directory.
+      The /jojo5/gs512 directory becomes "/" on the CDRom.
+
+      WATCH THE OUTPUT CAREFULLY for messages about long file/directory names
+      being truncated or renamed!!  If this happens you won't get what
+      you expect on the disk!!!
+
+      To IGNORE links use:
+        makecdromimage.pl -f -i /jojo5/gs512 -o /jojo3/gs512.iso
+
+      You can NOT preserve links with this format unless the links
+      are inside a zip or tar file.
+
+      When done (it takes awhile) go to the CDRecorder PC and copy the
+      .iso file to directory C:\CDRomIsoDir.
+
+   B) UNIX only disk with long file names.
+      This is a RockRidge format disk.  It is readable on UNIX ONLY.
+      This starts on a Solaris UNIX machine to make the .iso image file.
+      (This image file must be copied to the PC after creation.)
+      This format is good for archiving directories from UNIX.  All UNIX
+      file names are valid and links can be preserved.
+
+      For example:
+        cd /gcm/where/ship51/scripts     OR
+        cd /gcm/where/shipjv20/scripts   (will work the same)
+        makecdromimage.pl -r -q -i /jojo5/gs512 -o /jojo3/gs512.iso
+      This invocation preserves links and creates the iso image file
+      /jojo3/gs512.iso from the contents of the /jojo5/gs512 directory.
+      The /jojo5/gs512 directory becomes "/" on the CDRom.
+      You will be asked to OK a list of links if any are found.
+      Look at this list carefully.  Any links that do not point to
+      files on the CDRom will likely be BROKEN when the CDRom is mounted.
+      Use only relative links to files/directories in your input directory.
+
+      To follow links use:
+        makecdromimage.pl -f -r -q -i /jojo5/gs512 -o /jojo3/gs512.iso
+
+      When done (it takes awhile) go to the CDRecorder PC and copy the
+      .iso file to directory C:\CDRomIsoDir.
+
+   C) PC only disk with long file names.
+      This is all done on the PC.
+      This is a Joliet format disk.  It is readable on WinNT/Win95/Win98
+      and PC Linux ONLY.  This format is PC specific and allows long,
+      PC style file names BUT ONLY UP TO 65 CHARACTERS LONG.  Legal PC
+      file names longer than 65 characters will be truncated.
+      Links are not supported.
+
+      Copy all files and directories you want put on the CDR to the PC in
+      directory
+        C:\CDRomTempDir\cdrom
+      Clean out any existing files first!!!
+
+   D) UNIX/PC hybrid disk with long file names.
+      This is a RockRidge/Joliet hybrid format disk.  It is readable on
+      UNIX and PCs.
+      This starts on a Solaris UNIX machine to make the .iso image file.
+      (This image file must be copied to the PC after creation.)
+      Be aware that some UNIX file names are not legal on PCs (for instance
+      names with ":" in them) and that legal PC file names can be longer
+      than the 65 characters allowed.  Links are not supported in Joliet
+      but are supported by RockRidge.  Be carefull.
+
+      For example:
+        cd /gcm/where/ship51/scripts     OR
+        cd /gcm/where/shipjv20/scripts   (will work the same)
+        makecdromimage.pl -r -j -q -i /jojo5/gs512 -o /jojo3/gs512.iso
+      This invocation preserves links (for UNIX readers) and creates the
+      iso image file /jojo3/gs512.iso from the contents of the /jojo5/gs512
+      directory.
+      The /jojo5/gs512 directory becomes "/" on the CDRom.
+      You will be asked to OK a list of links if any are found.
+      Look at this list carefully.  Any links that do not point to
+      files on the CDRom will likely be BROKEN when the CDRom is mounted.
+      Use only relative links to files/directories in your input directory.
+      Links will all be broken when read by a PC.
+
+      To follow links use:
+        makecdromimage.pl -f -r -j -q -i /jojo5/gs512 -o /jojo3/gs512.iso
+
+      When done (it takes awhile) go to the CDRecorder PC and copy the
+      .iso file to directory C:\CDRomIsoDir.
+
+(At the PC now...)
+2) Put a blank disk in the CDR, shiney side up, colored side down.
+     Some machines require a cassette and some use a tray.  On the tray
+     loading machines PLEASE use the front panel button to open AND close
+     the tray to avoid unwanted wear and damage on the machine.
+
+3) Wait for all the lights to stop blinking on the CDR.
+
+4) Start the CDR program:
+   A) If you have an image file (a .iso file) just double click on the
+      file name.  This starts up Easy CD Creator for you.
+      Go to step 5.
+
+   B) If you have a set of files on the PC for a Joliet disk do the following:
+
+     i) From the "Start" "Programs" "Adaptec Easy CD Creator" menu cascade
+          open "Easy CD Creator Deluxe".
+
+     ii) From the "File" "Open CD Layout..." popup menu
+          double click on "joliet.cl3".
+
+     iii) The top half of the program window shows an Explorer-like interface.
+          Explore around until the top right subwindow shows the contents of
+          C:\CDRomTempDir\cdrom.  Select all the files and directories and
+          drag them to the lower right subwindow.
+
+     iv) In the lower right subwindow select the "REMOVEME" directory.  From
+          the "Edit" menu select "Remove" and confirm your choice when asked.
+
+     v) From the "File" menu select "Create CD ...".  This brings up a popup.
+
+5) Start the disk creation:
+   In the popup menu that is now up:
+   A) In the "General" tab, select "Create CD".
+   B) Chose the number of copies to make.
+   C) In the "Advanced" tab, select "Disc-at-Once". THIS IS VERY IMPORTANT!!
+   D) Now click the "OK" button.
+
+6) The disk is now being written.  This takes a while, up to 20 minutes
+   for 650Meg and a 4x CDRecorder.
+
+7) Wait for the tray or cassette to be ejected by the software.
+
+8) Click the "OK" button that the software presents.
+
+9) Close the program.  DO NOT SAVE ANY CHANGES YOU MAY HAVE MADE IF IT ASKS!!!
+
+10) Label the disk.
+   Its best to write on the label BEFORE you apply it to the CDR.
+   DO NOT ATTEMPT TO REMOVE OR REPOSITION THE LABEL AFTER IT IS STUCK DOWN
+   OR YOU WILL PEAL YOUR DATA RIGHT OFF THE CDR!
+
+   The label goes on the shiney side.
+
+   If you must write on a label after it has been applied, write lightly
+   with a ball point pen.  Some felt tips may bleed solvents into the data layer
+   and scramble your disk.
+   Don't press very hard and you will be fine.
+

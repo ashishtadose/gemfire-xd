@@ -1,0 +1,169 @@
+GemStone Systems, Inc.                                          Product Release
+===============================================================================
+PRODUCT:
+
+VERSION NO:
+PART NO:
+DATE:
+INVENTORY DIRECTORY NAME:
+CDROM DIRECTORY PATH:
+===============================================================================
+DEVELOPMENT GROUP
+  Comments:
+
+
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+
+QUALITY ASSURANCE
+  (enter "X" for completed or "NA" (not applicable) in the box)
+  [  ] Known bugs list reviewed, approved, and attached to this signoff.
+  [  ] QA of Installation Documentation
+  [  ] The product test disks/tape/CD have been verified.
+  [  ] Engineering archives of product source files have been created.
+  [  ] Engineering archives of product source files have been put on tape or CD.
+  [  ] /gcm/where/.... links have been made pointing to engineering archives.
+  [  ] CVS or Envy tag has been put on product sources.
+  [  ] CVS or Envy tag has been put on test sources.
+  [  ] QRT form completed for patch.
+
+  Pass  Fail
+  [  ]  [  ]   All Old Functionality
+  [  ]  [  ]   [Sub]Set of all New Functionality
+  ("Pass" = tests on this version of Product run and active bugs
+    are considered "shippable" and have been considered for bugnotes.)
+
+  Comments:
+
+
+
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+
+TECH SUPPORT
+  [  ] Known bugs list reviewed and approved.
+  [  ] Fixed bugs list reviewed and approved.
+  [  ] List of bugs to be bugnoted reviewed and approved.
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+DOCUMENTATION
+  (enter "X" for completed or "NA" (not applicable) in the box)
+  [  ] Release Notes
+  [  ] Installation Instructions
+  [  ] Cover Letter
+       [  ] cover letter contains information describing the End of Life
+              or Support Policy for the previous version(s) of this product?
+       [  ] If this release is believed to be the last (or next-to-last) 
+              release of the product, is there an appropriate notice contained
+              in the cover letter?
+  [  ] All required bugnotes have been written
+  [  ] Bugnotes have been pushed to the web.
+  [  ] QA of Online Help included with product.
+  [  ] QA of Online Docs included with product.
+  
+  Manual Title                             Date
+
+
+
+
+
+
+
+
+  Comments:
+
+
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+
+WEB DISTRIBUTION
+  Yes    No
+  [  ]  [  ]  Is this product is to be distributed via Web?
+      If Yes:
+      [  ] Product files are in place.
+      [  ] Links in place and tested.
+      [  ] Web text for this release reviewed and approved.
+      [  ] Files have been downloaded from web and verified correct.
+
+  Comments:
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+DISTRIBUTION/PRODUCT RELEASE AND MASTERS
+
+   [  ] The product master disks/tape/CD have been verified.
+
+   Media Type for Masters:
+      [  ]8mm  [  ]Disc(s)  [  ]CDRom [  ]Other________________________________
+
+   Does this product include vendor software that must be tracked for royalty 
+   payment?  If yes, vendor name:                         
+
+   Yes    No
+   [  ]  [  ]  Distribution accept product from Product Engineering?
+   If no, reason:
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+
+PRODUCT MARKETING
+   Comments:
+
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+GemStone Systems, Inc.                               Product Source Release
+===============================================================================
+PRODUCT:
+
+VERSION NO:
+PART NO:
+DATE:
+INVENTORY DIRECTORY NAME:
+CDROM DIRECTORY PATH:
+===============================================================================
+QUALITY ASSURANCE
+  (enter "X" for completed or "NA" (not applicable) in the box)
+  [  ] Engineering archives of product source files have been created.
+
+  Comments:
+
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________
+
+DISTRIBUTION/PRODUCT RELEASE AND MASTERS
+
+   [  ] The product master disks/tape/CD have been verified.
+
+   Media Type for Masters:
+      [  ]8mm  [  ]Disc(s)  [  ]CDRom [  ]Other________________________________
+
+   Does this product include vendor software that must be tracked for royalty 
+   payment?  If yes, vendor name:                         
+
+   Yes    No
+   [  ]  [  ]  Distribution accept product from Product Engineering?
+   If no, reason:
+
+Signature                         Name (please print)               Date
+
+_______________________________________________________________________________

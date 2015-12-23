@@ -1,0 +1,1380 @@
+<project name="tests">
+
+  <target name="define-classpath-refs" depends="props, -define-test-macros">
+    <path id="empty.classpath"/>
+    <!-- NOTE the base.classpath is the product classpath with additional dependencies based on deprecated features
+         (e.g. the old Admin interface, which uses commons-modeler, mx4j and Java Mail API) -->
+    <path id="base.classpath">
+      <!-- NOTE activation.jar is required if classes from mail.jar are used-->
+      <pathelement location="${activation.jar}"/>
+      <pathelement location="${bcel.jar}"/>
+      <pathelement location="${commons-modeler.jar}"/>
+      <pathelement location="${javac.primary}/lib/tools.jar"/>
+      <pathelement location="${jna.jar}"/>
+      <pathelement location="${mail.jar}"/>
+      <pathelement location="${mx4j.jar}"/>
+      <pathelement location="${mx4j-remote.jar}"/>
+      <pathelement location="${mx4j-tools.jar}"/>
+      <pathelement location="${spymemcached-client.jar}"/>
+      <pathelement location="${product.dir}/examples/dist/classes"/>
+      <pathelement location="${product.lib.dir}/${locator-dependencies.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${server-dependencies.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${gfSecurityImpl.jar.name}"/>
+    </path>
+    <path id="base.test.classpath">
+      <path refid="base.classpath"/>
+      <path refid="jersey.classpath"/>
+      <path refid="jetty.classpath"/>
+      <pathelement location="${ant.core.lib}"/>
+      <pathelement location="${ant.home}/lib/ant-junit.jar"/>
+      <pathelement location="${cglib-nodep.jar}"/>
+      <pathelement location="${contest.dir}/Lib/ConTest.jar"/>
+      <pathelement location="${hamcrest-core.jar}"/>
+      <pathelement location="${hamcrest-library.jar}"/>
+      <pathelement location="${jmock.jar}"/>
+      <pathelement location="${hadoop-hdfs-test.jar}"/>
+      <pathelement location="${hadoop-common-test.jar}"/>
+      <pathelement location="${hadoop-mapreduce-client-core.jar}"/>
+      <pathelement location="${commons-collections.jar}"/>
+      <pathelement location="${log4j.jar}"/>
+      <pathelement location="${jmock-legacy.jar}"/>
+      <pathelement location="${junit.jar}"/>
+      <pathelement location="${multithreadedTC.jar}"/>
+      <pathelement location="${objenesis.jar}"/>
+      <pathelement location="${tests.lib.dir}/XMLJUnitFormatterTerse.jar"/>
+      <pathelement location="${derby.jar}"/>
+      <pathelement location="${tests.lib.dir}/cache.xml"/>
+      <pathelement location="${tests.classes.dir}"/>
+    </path>
+    <path id="quickstart.classpath">
+      <pathelement location="${tests.src.dir}/quickstart"/>
+      <pathelement location="${hidden.dir}/quickstart"/>
+      <pathelement location="${hidden.dir}/quickstart/classes"/>
+    </path>
+    <path id="junit.classpath">
+      <path refid="base.test.classpath"/>
+      <path refid="hadoop.classpath"/>
+      <pathelement location="${product.lib.dir}/${gfsh-dependencies.jar.name}"/>
+      <pathelement location="${spring-web-servlet.jar}"/>
+    </path>
+    <path id="dunit.classpath">
+      <path refid="base.test.classpath"/>
+    </path>
+    <path id="batterytest.classpath">
+      <path refid="dunit.classpath"/>
+      <pathelement location="${tests.jar.dir}/${dom4j.jar.name}"/>
+      <pathelement location="${tests.jar.dir}/${vijava.jar.name}"/>
+    </path>
+  </target>
+
+  <target name="run-greplogs" depends="define-test-groups" description="Run grepLogs on -DGEresults">
+    <property name="GEresults" value="${tests.results.dir}"/>
+    <error-grep sourceDir="${GEresults}" threshold="0"/>
+    <conditional if="failed">
+      <echo message="See error.grep file: ${GEresults}/error.grep" level="info"/>
+    </conditional>
+  </target>
+
+  <target name="parallel-junit" depends="define-test-groups, -keep-going" description="Run all junit tests parallel in 5 (balanced) groups.">
+    <property name="testGroup" value="${junit.testlist}"/>
+    <property name="jresults" value="${tests.results.dir}/junit"/>
+    <property name="jvm" value="${unittest.java32}"/>
+    <property name="dprop" value="${d32prop}"/>
+
+    <taskdef classname="com.gemstone.gemfire.internal.AvailablePortTask" name="available-port">
+      <classpath>
+        <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+      </classpath>
+    </taskdef>
+
+    <delete dir="${jresults}" quiet="true"/>
+
+    <parallel threadcount="5">
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="1" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="2" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="3" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="4" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="5" />
+      </antcallback>
+    </parallel>
+
+    <error-grep sourceDir="${jresults}" threshold="${threshold.parallelJUnit}"/>
+    <conditional if="failed">
+      <echo message="FAILED: junit tests failures in ${jresults}/site*/failures" level="error"/>
+      <echo append="true" file="${jresults}/TestFailures" message="FAILED: junit tests failures in ${jresults}/site*/failures" level="error"/>
+      <fail message="FAILED: One or more junit tests failed"/>
+    </conditional>
+    <conditional unless="failed">
+      <echo level="info" message="Info: all junit tests ran successfully."/>
+      <delete dir="${jresults}/site*/failures" quiet="true"/>
+    </conditional>
+  </target>
+
+  <target name="-parallelJUnit" depends="define-test-groups, define-classpath-refs">
+    <echo message="started site ${junit.division.num}" />
+    <!--<stopwatch name="timer${junit.division.num}" />
+    <run-junit results="${tests.results.dir}/java" threshold="${threshold.java}"
+               junit.division.total="${junit.division.total}"
+               junit.division.num="${junit.division.num}" />
+    <stopwatch name="timer${junit.division.num}" action="total" />-->
+    <property name="junit.division.total" value="1" />
+    <property name="junit.division.num" value="1" />
+    <property name="junit.testlist" value="junit-default-tests"/>
+    <run-parallel-junit-part testGroup="${junit.testlist}" jvm="${jvm}" dprop="${dprop}"/>
+  </target>
+
+  <target name="parallel-junit64" depends="define-test-groups, -keep-going" description="Run all junit tests parallel in 5 (balanced) groups.">
+    <property name="testGroup" value="${junit.testlist}"/>
+    <property name="jresults" value="${tests.results64.dir}/junit"/>
+    <property name="jvm" value="${unittest.java64}"/>
+    <property name="dprop" value="${d64prop}"/>
+
+    <taskdef classname="com.gemstone.gemfire.internal.AvailablePortTask" name="available-port">
+      <classpath>
+        <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+      </classpath>
+    </taskdef>
+
+    <delete dir="${jresults}" quiet="true"/>
+
+    <parallel threadcount="5">
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="1" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="2" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="3" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="4" />
+      </antcallback>
+      <antcallback target="-parallelJUnit" return="failed">
+        <param name="junit.division.total" value="5" />
+        <param name="junit.division.num" value="5" />
+      </antcallback>
+    </parallel>
+
+    <error-grep sourceDir="${jresults}" threshold="${threshold.parallelJUnit}"/>
+    <conditional if="failed">
+      <echo message="FAILED: junit tests failures in ${jresults}/site*/failures" level="error"/>
+      <echo append="true" file="${jresults}/TestFailures" message="FAILED: junit tests failures in ${jresults}/site*/failures" level="error"/>
+      <fail message="FAILED: One or more junit tests failed"/>
+    </conditional>
+    <conditional unless="failed">
+      <echo level="info" message="Info: all junit tests ran successfully."/>
+      <delete dir="${jresults}/site*/failures" quiet="true"/>
+    </conditional>
+  </target>
+
+  <target name="define-test-groups" depends="props, define-classpath-refs">
+    <conditional if="dunit.testcase">
+      <property name="dunit.testlist" value="dunit-custom-tests"/>
+    </conditional>
+    <conditional unless="dunit.testcase">
+      <property name="dunit.testlist" value="dunit-default-tests"/>
+    </conditional> 
+    <conditional unless="gemfirexd.dunit.testcase">
+      <property name="gemfirexd.dunit.testlist" value="gemfirexd-dunit-default-tests"/>
+    </conditional>
+    <conditional if="wan.dunit.testcase">
+      <property name="wan.dunit.testlist" value="wan-dunit-custom-tests"/>
+    </conditional>
+    <conditional unless="wan.dunit.testcase">
+      <property name="wan.dunit.testlist" value="wan-dunit-default-tests"/>
+    </conditional>
+    <conditional if="junit.testcase">
+      <property name="junit.testlist" value="junit-custom-tests"/>
+    </conditional>
+    <conditional unless="junit.testcase">
+      <property name="junit.testlist" value="junit-default-tests"/>
+    </conditional>
+
+    <conditional if="quickstart.testcase">
+      <property name="quickstart.testlist" value="quickstart-custom-tests"/>
+    </conditional>
+    <conditional unless="quickstart.testcase">
+      <property name="quickstart.testlist" value="quickstart-default-tests"/>
+    </conditional>
+
+    <conditional if="container.testcase">
+      <property name="container.testlist" value="container-custom-tests"/>
+    </conditional>
+    <conditional unless="container.testcase">
+      <property name="container.testlist" value="container-default-tests"/>
+    </conditional>
+
+    <!-- All of the tests for a custom junit run -->
+    <patternset id="junit-custom-tests">
+      <include name="${junit.testcase}"/>
+      <exclude name="${junit.excludes}" if="junit.excludes"/>
+    </patternset>
+
+    <!-- All of the tests for a standard junit run -->
+    <patternset id="junit-default-tests">
+      
+      <!-- Default JUnit tests -->
+      <include name="com/gemstone/gemfire/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/**/*Timer*.class"/>
+      <include name="com/gemstone/gemfire/cache/mapInterface/*Test.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/lru/*Test.class"/>
+
+      <!-- SecurityManagerLogWriterJUnitTest hangs in 64-bit -->
+      <exclude name="**/SecurityManagerLogWriterJUnitTest.class"/>
+
+      <exclude name="com/gemstone/gemfire/internal/cache/CacheAdvisorTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/CacheEventListenerTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/MapClearGIITest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/HAInterestBaseTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/MapInterfaceTest.class"/>
+      <include name="com/gemstone/EDU/oswego/cs/**/*Test.class"/>
+      <include name="com/gemstone/jdbm/lbhtree/*Test.class"/>
+      <include name="xform/**/*Test.class"/>
+
+      <exclude name="com/gemstone/gemfire/**/*$*.class"/>
+
+      <!-- Exclude the Schwab Query performance tests from running  as they are time consuming -->
+      <exclude name="com/gemstone/gemfire/cache/query/Schwab*Test.class"/>
+
+      <!-- exclude temporarily broken tests -->
+      <exclude name="com/gemstone/gemfire/distributed/internal/locks/CollaborationJUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/ScheduledThreadPoolExecutorWithKeepAliveJUnitTest.class"/>
+
+      <!-- exclude the dunit tests -->
+      <exclude name="com/gemstone/gemfire/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/BadTest.class"/>
+      <exclude name="com/gemstone/gemfire/TimingTestCase.class"/>
+      <exclude name="com/gemstone/gemfire/GemFireConnectionFactoryTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache30/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/jta/ManagedPoolCacheTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/locks/TXLockServiceTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/DistributedLockServiceTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/DistributedMemberTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/DistributedSystemTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/LocatorTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/RoleTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/AgentTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/ConsoleDistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/DistributionAdvisorTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/DistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/JavaGroupsTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/LocalDistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/StreamingOperationManyTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/StreamingOperationOneTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/partitioned/Bug39356DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/partitioned/StreamingPartitionOperationManyTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/partitioned/StreamingPartitionOperationOneTest.class"/>
+      <include name="com/gemstone/gemfire/distributed/internal/JSSESocketTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/*.class"/>
+      <exclude name="**/AllTests.class"/>
+      <exclude name="${junit.excludes}" if="junit.excludes"/>
+
+      <!-- bug 37225 -->
+      <exclude name="**/HARegionQueueStartStopJUnitTest.class"/>
+
+      <!-- disable V8 licensing and exclude licensing tests -->
+      <exclude name="com/gemstone/gemfire/internal/licensing/*.class"/>
+
+      <!-- disable GemFire OSGI tests -->
+      <exclude name="com/gemstone/gemfire/internal/SimpleOsgiJUnitTest.class"/>
+
+      <!-- do these last to override any agressive excludes -->
+      <include name="com/gemstone/gemfire/**/*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/distributed/DistributedSystemTest.class"/>
+
+      <!-- disable SizeTieredSortedOplogSetJUnitTest due to issues on windows-->
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/soplog/SizeTieredSortedOplogSetJUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/soplog/SortedOplogSetJUnitTest.class"/>
+    </patternset>
+
+    <patternset id="junit-query-tests">
+      <include name="com/gemstone/gemfire/cache/query/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/cache/query/facets/lang/Test*.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/Schwab*Test.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/**/*DUnitTest.class"/>
+    </patternset>
+
+    <patternset id="dunit-query-tests">
+      <include name="com/gemstone/gemfire/cache/query/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/Schwab*Test.class"/>
+    </patternset>
+
+    <!-- quickstart -->
+    <patternset id="quickstart-custom-tests">
+      <include name="${quickstart.testcase}"/>
+      <exclude name="${quickstart.excludes}" if="quickstart.excludes"/>
+    </patternset>
+    <patternset id="quickstart-default-tests">
+      <include name="quickstart/*Test.class"/>
+       <exclude name="quickstart/*DUnitTest.class"/>
+      <!-- <exclude name="quickstart/DeltaPropagationTest.class"/> workaround bug 45084 -->
+    </patternset>
+
+    <patternset id="wan-dunit-default-tests">
+      <include name="com/gemstone/gemfire/internal/cache/wan/**/*DUnitTest.class"/>
+    </patternset>
+
+    <!-- container -->
+    <patternset id="container-custom-tests">
+      <include name="${container.testcase}"/>
+      <exclude name="${container.excludes}" if="container.excludes"/>
+    </patternset>
+    <patternset id="container-default-tests">
+      <include name="container/*Test.class"/>
+      <exclude name="container/FailingContainerTest.class"/>
+      <exclude name="container/*DUnitTest.class"/>
+    </patternset>
+
+    <!-- dunit -->
+    <patternset id="dunit-default-tests">
+
+      <!-- begin standard list of tests -->
+      <include name="dunit/tests/*Test.class"/>
+      <include name="com/gemstone/gemfire/**/*DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/query/dunit/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/wan/**/*DUnitTest.class"/>
+      <!--exclude name="com/gemstone/gemfire/management/**/*DUnitTest.class"/-->
+    
+      <!-- TODO 6 Jan 2009 - provide hydra simulation-->
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/BackwardCompatibilityMessageDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/HAInterestBaseTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/distributed/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/util/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/StatsBugDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/PRTXTest.class"/>
+
+      <!-- TODO 9 Jun 2007 - this test is misbehaving... -->
+      <exclude name="com/gemstone/gemfire/admin/SystemMemberCacheListenerDUnitTest.class"/>
+      <!-- TODO 22 Jan 2008 - this test is misbehaving... -->
+      <exclude name="com/gemstone/gemfire/**/*RegisterInstantiatorEventIdDUnitTest.class"/>
+      <!-- started hanging after trunk merge -->
+      <exclude name="com/gemstone/gemfire/cache30/SlowRecDUnitTest.class"/>
+      <!-- TODO 18 April 2008 - started hanging retest after merging trunk -->
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/old_EventIdOptimizationDUnitTest.class"/>
+      <!-- TODO 30 June 2008 - this test is misbehaving. See bug 39160. Disabling this test
+      until it is fixed -->
+      <!-- <exclude name="com/gemstone/gemfire/internal/cache/ha/old_HARQueueNewImplDUnitTest.class"/> -->
+      <!-- <exclude name="com/gemstone/gemfire/internal/cache/ha/HARQueueNewImplDUnitTest.class"/> -->
+
+      <exclude name="com/gemstone/gemfire/distributed/internal/LocalDistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/internal/JavaGroupsTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/lru/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/MapInterfaceTest.class"/>
+      <!--exclude name="com/gemstone/gemfire/cache30/GlobalLockingTest.class"/-->
+      <!-- exclude due to problems on windows bug 37352 in v5.1 -->
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/*HAStartupAndFailoverDUnitTest.class"/>
+      <!-- TODO March 2011 exclude EvictionDUnitTest due to intermittent hangs -->
+      <exclude name="com/gemstone/gemfire/internal/cache/EvictionDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/**/*JUnitTest.class"/>
+      <exclude name="${dunit.excludes}" if="dunit.excludes"/>
+      <!-- end standard list of tests -->
+      <!-- Problematic Parallel Tests
+      <exclude name="com/gemstone/gemfire/admin/statalerts/StatAlertDefinitionJMXOperationsDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMISSLDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMIDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/AdminDistributedSystemDisconnectDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/CoLocatedAgentDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/DistributionLocatorDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXRMIDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/ConnectionPoolAutoDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache30/DiskDistributedNoAckSyncOverflowRegionTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/SystemFailureDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/SingleWriteSingleReadRegionQueueDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/control/RebalanceOperationDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/execute/ColocationFailoverDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/execute/DistributedRegionFunctionExecutionDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderOldConfigDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/DurableClientReconnectAutoDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/SystemMemberCacheDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberCacheJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberRegionJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/management/MemoryThresholdsDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/partition/PartitionRegionHelperDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/DistributedSystemDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/client/internal/AutoConnectionSourceWithUDPDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/CqDataUsingPoolDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/HASlowReceiverDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/NetSearchMessagingDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/CqResultSetUsingPoolDUnitTest.class"/>
+      -->
+      <exclude name="com/gemstone/gemfire/management/**/*CommandsDUnitTest.class"/>
+    	
+      <!-- disable V8 licensing and exclude licensing tests -->
+      <exclude name="com/gemstone/gemfire/internal/licensing/*.class"/>
+    	
+    </patternset>
+
+    <patternset id="gemfirexd-dunit-default-tests">
+
+      <!-- begin standard list of tests -->
+      <include name="dunit/tests/*Test.class"/>
+      <include name="com/gemstone/gemfire/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/admin/**/*DUnitTest.class"/>	
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/wan/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/query/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/**/*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/pdx/**DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/Pdx**DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/**/Delta**DUnitTest.class"/>
+      <!--exclude name="com/gemstone/gemfire/management/**/*DUnitTest.class"/-->
+    
+      <!-- TODO 6 Jan 2009 - provide hydra simulation-->
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/BackwardCompatibilityMessageDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/HAInterestBaseTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache30/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/distributed/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/**/util/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/StatsBugDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/PRTXTest.class"/>
+
+      <!-- TODO 9 Jun 2007 - this test is misbehaving... -->
+      <exclude name="com/gemstone/gemfire/admin/SystemMemberCacheListenerDUnitTest.class"/>
+      <!-- TODO 22 Jan 2008 - this test is misbehaving... -->
+      <exclude name="com/gemstone/gemfire/**/*RegisterInstantiatorEventIdDUnitTest.class"/>
+      <!-- started hanging after trunk merge -->
+      <exclude name="com/gemstone/gemfire/cache30/SlowRecDUnitTest.class"/>
+      <!-- TODO 18 April 2008 - started hanging retest after merging trunk -->
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/old_EventIdOptimizationDUnitTest.class"/>
+      <!-- TODO 30 June 2008 - this test is misbehaving. See bug 39160. Disabling this test
+      until it is fixed -->
+      <!-- <exclude name="com/gemstone/gemfire/internal/cache/ha/old_HARQueueNewImplDUnitTest.class"/> -->
+      <!-- <exclude name="com/gemstone/gemfire/internal/cache/ha/HARQueueNewImplDUnitTest.class"/> -->
+
+      <exclude name="com/gemstone/gemfire/distributed/internal/LocalDistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/internal/JavaGroupsTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/lru/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/MapInterfaceTest.class"/>
+
+      <!--exclude name="com/gemstone/gemfire/cache30/GlobalLockingTest.class"/-->
+      <!-- exclude due to problems on windows bug 37352 in v5.1 -->
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/*HAStartupAndFailoverDUnitTest.class"/>
+      <!-- TODO March 2011 exclude EvictionDUnitTest due to intermittent hangs -->
+      <exclude name="com/gemstone/gemfire/internal/cache/EvictionDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/**/*JUnitTest.class"/>
+      <exclude name="${dunit.excludes}" if="dunit.excludes"/>
+      <!-- end standard list of tests -->
+      <!-- Problematic Parallel Tests
+      <exclude name="com/gemstone/gemfire/admin/statalerts/StatAlertDefinitionJMXOperationsDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMISSLDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMIDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/AdminDistributedSystemDisconnectDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/CoLocatedAgentDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/DistributionLocatorDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXRMIDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/ConnectionPoolAutoDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache30/DiskDistributedNoAckSyncOverflowRegionTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/SystemFailureDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/SingleWriteSingleReadRegionQueueDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/control/RebalanceOperationDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/execute/ColocationFailoverDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/execute/DistributedRegionFunctionExecutionDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderOldConfigDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/DurableClientReconnectAutoDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/SystemMemberCacheDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberCacheJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/jmx/SystemMemberRegionJMXDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/management/MemoryThresholdsDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/partition/PartitionRegionHelperDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/admin/DistributedSystemDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/client/internal/AutoConnectionSourceWithUDPDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/CqDataUsingPoolDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ha/HASlowReceiverDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/NetSearchMessagingDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/query/dunit/CqResultSetUsingPoolDUnitTest.class"/>
+      -->
+      <exclude name="com/gemstone/gemfire/management/**/*CommandsDUnitTest.class"/>
+      <!-- START  gfe client server dunits excluded from cheetah -->
+      <exclude name="com/gemstone/gemfire/cache/ConnectionPoolDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/cache/ConnectionPoolAutoDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/PutAllCSDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/Bug42010StatsDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/execute/SingleHopGetAllPutAllDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/security/*Client*DUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/security/MultiuserAPIDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/security/MultiuserDurableCQAuthzDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/ClientServerGetAllDUnitTest.class"/>
+      <!-- END  gfe client server dunits excluded from cheetah -->
+    	
+      <!-- disable V8 licensing and exclude licensing tests -->
+      <exclude name="com/gemstone/gemfire/internal/licensing/*.class"/>
+    </patternset>
+
+    <patternset id="dunit-serial-tests">
+      <include name="com/gemstone/gemfire/admin/statalerts/StatAlertDefinitionJMXOperationsDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMISSLDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/DistributedSystemJMXRMIDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/AdminDistributedSystemDisconnectDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/CoLocatedAgentDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/DistributionLocatorDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXRMIDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/GemFireHealthJMXDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/ConnectionPoolAutoDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DiskDistributedNoAckSyncOverflowRegionTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/SystemFailureDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/SingleWriteSingleReadRegionQueueDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/control/RebalanceOperationDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/execute/ColocationFailoverDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/execute/DistributedRegionFunctionExecutionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderOldConfigDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/tier/sockets/DurableClientReconnectAutoDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/SystemMemberCacheDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/SystemMemberJMXDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/SystemMemberCacheJMXDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/jmx/SystemMemberRegionJMXDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/management/MemoryThresholdsDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/partition/PartitionRegionHelperDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/DistributedSystemDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/client/internal/AutoConnectionSourceWithUDPDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/query/dunit/CqDataUsingPoolDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ha/HASlowReceiverDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/NetSearchMessagingDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/query/dunit/CqResultSetUsingPoolDUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-someones-tests">
+      <!-- begin custom list -->
+      <include name="com/gemstone/gemfire/cache30/CacheXmlTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/SharedDistributedAckRegionTest.class"/>
+      <!-- started hanging after trunk merge -->
+      <exclude name="com/gemstone/gemfire/cache30/SlowRecDUnitTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/internal/LocalDistributionManagerTest.class"/>
+      <exclude name="com/gemstone/gemfire/distributed/internal/JavaGroupsTest.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/lru/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/internal/cache/MapInterfaceTest.class"/>
+      <!-- exclude due to problems on windows bug 37352 in v5.1 -->
+      <exclude name="com/gemstone/gemfire/internal/cache/tier/sockets/*HAStartupAndFailoverDUnitTest.class"/>
+
+      <!-- disable V8 licensing and exclude licensing tests -->
+      <exclude name="com/gemstone/gemfire/internal/licensing/*.class"/>
+
+    	<exclude name="com/gemstone/gemfire/**/*JUnitTest.class"/>
+      <exclude name="${dunit.excludes}" if="dunit.excludes"/>
+    </patternset>
+
+    <if>
+      <not> <isset property="dunit.testcase"/> </not>
+      <then>
+        <property name="dunit.testcase.filtered" value="${dunit.testcase}"/>
+      </then>
+      <else>
+        <if>
+          <matches pattern="\*" string="${dunit.testcase}"/>
+          <then>
+            <loadresource property="dunit.testcase.filtered">
+              <propertyresource name="dunit.testcase"/>
+              <filterchain>
+                <tokenfilter>
+                  <filetokenizer/>
+                  <replaceregex pattern="^\Q${basedir}\E[\\/]tests[\\/]" replace=""/>
+                  <replacestring from="." to="${file.separator}"/>
+                  <replaceregex pattern="[\\/]class$" replace=".class"/>
+                  <replaceregex pattern="^tests[\\/]" replace=""/>
+                </tokenfilter>
+              </filterchain>
+            </loadresource>
+          </then>
+          <else>
+            <loadresource property="dunit.testcase.filtered">
+              <propertyresource name="dunit.testcase"/>
+              <filterchain>
+                <tokenfilter>
+                  <filetokenizer/>
+                  <replaceregex pattern="^\Q${basedir}\E[\\/]tests[\\/]" replace=""/>
+                  <replaceregex pattern="\.java$" replace=""/>
+                  <replacestring from="." to="${file.separator}"/>
+                  <replaceregex pattern="[\\/]class$" replace=""/>
+                  <replaceregex pattern="^tests[\\/]" replace=""/>
+                </tokenfilter>
+                <suffixlines suffix=".class"/>
+              </filterchain>
+            </loadresource>
+          </else>
+        </if>
+      </else>
+    </if>
+
+    <patternset id="dunit-custom-tests">
+      <include name="${dunit.testcase.filtered}" if="dunit.testcase"/>
+      <exclude name="${dunit.excludes}" if="dunit.excludes"/>
+    </patternset>
+    <patternset id="wan-dunit-custom-tests">
+      <include name="${wan.dunit.testcase}" if="wan.dunit.testcase"/>
+      <exclude name="${dunit.excludes}" if="dunit.excludes"/>
+    </patternset>
+    <!-- gridteam example -->
+    <patternset id="junit-gridteam-tests">
+      <include name="com/gemstone/gemfire/internal/cache/*Rolling*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/*Flushing*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/*Oplog*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/*Disk*JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-gridteam-tests">
+      <include name="com/gemstone/gemfire/cache30/CacheXml57Test.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/GridAdvisorDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/ConnectionPool*DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/client/**/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-pdx-tests">
+      <include name="com/gemstone/gemfire/pdx/**DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache/query/dunit/Pdx**DUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-pdx-tests">
+      <include name="com/gemstone/gemfire/pdx/**JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-admin-tests">
+      <include name="com/gemstone/gemfire/admin/**DUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-admin-tests">
+      <include name="com/gemstone/gemfire/admin/DistributedSystemFactoryTest.class"/>
+      <include name="com/gemstone/gemfire/admin/**JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/internal/*Test.class"/>
+    </patternset>
+    <patternset id="dunit-licensing-tests">
+      <include name="com/gemstone/gemfire/internal/licensing/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-licensing-tests">
+      <include name="com/gemstone/gemfire/internal/licensing/*JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-dls-tests">
+      <include name="com/gemstone/gemfire/distributed/DistributedLockServiceTest.class"/>
+      <include name="com/gemstone/gemfire/distributed/internal/locks/*DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/GlobalRegionCCEDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/GlobalRegionCompressionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/GlobalRegionTest.class"/>
+    </patternset>
+    <patternset id="junit-dls-tests">
+      <include name="com/gemstone/gemfire/distributed/internal/locks/ReentrantReadWriteWriteShareLockTest.class"/>
+      <include name="com/gemstone/gemfire/distributed/internal/locks/*JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-statistics-tests">
+      <include name="**/MemoryThresholdsDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/statistics/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-statistics-tests">
+      <include name="**/DataSerializableTest.class"/>
+      <include name="**/StatisticsTypeTest.class"/>
+      <include name="**/LocalStatisticsTest.class"/>
+      <include name="**/SecurityManagerLogWriterJUnitTest.class"/>
+      <include name="**/GemFireStatSamplerJUnitTest.class"/>
+      <include name="**/SimpleStatSamplerJUnitTest.class"/>
+      <include name="**/StatArchiveWriterReaderJUnitTest.class"/>
+      <include name="**/StatSamplerJUnitTest.class"/>
+      <include name="**/NanoTimerTest.class"/>
+      <include name="**/NanoTimerJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/statistics/*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/management/bean/stats/*JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-management-tests">
+      <include name="com/gemstone/gemfire/management/**/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-management-tests">
+      <include name="com/gemstone/gemfire/internal/i18n/BasicI18nTest.class"/> <!-- for ManagementStrings -->
+      <include name="com/gemstone/gemfire/management/**/*Test.class"/>
+      <exclude name="com/gemstone/gemfire/management/**/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-memscale-tests">
+      <include name="**/offheap/*DUnitTest.class"/>
+      <include name="**/*OffHeapDUnitTest.class"/>
+      <exclude name="**/wan/**"/>
+    </patternset>
+    <patternset id="junit-memscale-tests">
+      <include name="**/offheap/*JUnitTest.class"/>
+      <include name="**/*OffHeapJUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-launcher-tests">
+      <include name="com/gemstone/gemfire/internal/process/*DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/**/*LauncherDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/**/*Launcher*DUnitTest.class"/>
+      <include name="**/LauncherLifecycleCommandsDUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-launcher-tests">
+      <include name="com/gemstone/gemfire/internal/process/*JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/**/*LauncherJUnitTest.class"/>
+      <include name="**/LauncherLifecycleCommandsJUnitTest.class"/>
+      <include name="**/LocatorStatusResponseJUnitTest.class"/>
+      <include name="**/ServerLocatorJUnitTest.class"/>
+      <include name="**/AnalyzeSerializablesJUnitTest.class"/>
+      <include name="**/BasicI18nTest.class"/>
+      <include name="**/SimpleOsgiJUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-txteam-tests">
+      <include name="com/gemstone/gemfire/cache30/CacheMapTxnDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/TXDistributedTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/locks/TXLockServiceTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/dunit/TxnManagerMultiThreadDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/dunit/TxnTimeOutDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/dunit/TransactionTimeOutDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/TXOrderDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/TXRestrictionsTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/tier/sockets/CacheServerTransactionsDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/tier/sockets/CacheServerTransactionsSelectorDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/execute/PRTransactionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/RemoteTransactionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/TransactionsWithDeltaDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ClientServerTransactionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/PartitionedRegionInvalidateDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/PartitionResolverDUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-txteam-tests">
+      <include name="com/gemstone/gemfire/TXTest.class"/>
+      <include name="com/gemstone/gemfire/TXWriterTest.class"/>
+      <include name="com/gemstone/gemfire/PRTXTest.class"/>
+      <include name="com/gemstone/gemfire/cache/TXExpiryTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/TXReservationMgrJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/GlobalTransactionTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/TransactionImplTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/TransactionManagerImplTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/TransactionTimeOutTest.class"/>
+      <include name="com/gemstone/gemfire/internal/jta/UserTransactionImplTest.class"/>
+    </patternset>
+    <patternset id="junit-persist-tests">
+      <include name="com/gemstone/gemfire/DiskInstantiatorsTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRandomOperationsAndRecoveryJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskInitFileJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskIFJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionIllegalArguementsJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegOverflowSyncGetInMemPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegOverflowSyncPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionOverflowSyncRollingOpLogJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionOverflowAsyncRollingOpLogJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionPersistOnlySyncJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionRollOpLogPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegOverflowAsyncGetInMemPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegOverflowAsyncPerfJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionAsyncRecoveryJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/SimpleDiskRegionJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegCacheXmlJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskOfflineCompactionJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskIdJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegOplogSwtchingAndRollerJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskStoreFactoryJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegByteArrayDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionChangingRegionAttributesJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegCbkChkJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegRecoveryJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionClearJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ComplexDiskRegionJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskWriteAttributesJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegionIllegalCacheXMLvaluesJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegCachexmlGeneratorJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskOldAPIsJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/OplogEntryIdMapJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/MultiThreadedOplogPerJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/MultipleOplogsRollingFeatureJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/OplogJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegOplogSwtchingAndRollerJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/OplogEntryIdSetJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/OplogRVVJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/diskPerf/DiskRegionPersistOnlySyncJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ConcurrentFlushingAndRegionOperationsJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ConcurrentRegionOperationsJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ConcurrentRollingAndRegionOperationsJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/Bug34011JUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/Bug34179TooManyFilesOpenJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ConflationJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/Bug37500JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-persist-tests">
+      <include name="com/gemstone/gemfire/cache30/DiskDistributedNoAckAsyncOverflowRegionTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DiskDistributedNoAckAsyncRegionTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DiskRegionTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DiskDistributedNoAckSyncOverflowRegionTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DistributedAckPersistentRegionCCEDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DiskRegByteArrayDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/DistributingEventsDuringDiskRegionClearDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/OplogDeletionAfterGIIDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/PersistentRecoveryOrderOldConfigDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/PersistentGatewayDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/persistence/ShutdownAllPersistentGatewayDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/PersistentPartitionedRegionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/fixed/FixedPartitioningWithColocationAndPersistenceDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/PersistentPartitionedRegionOldConfigDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/PersistPRKRFDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/PersistentColocatedPartitionedRegionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/partitioned/PersistentPartitionedRegionWithTransactionDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/UpgradeDiskStoreDUnitTest.class"/>
+    </patternset>
+    <patternset id="junit-hdfs-tests">
+      <include name="**/hdfs/*JUnitTest.class"/>
+      <include name="**/hdfs/internal/*JUnitTest.class"/>
+      <include name="**/hdfs/internal/hoplog/*JUnitTest.class"/>
+      <include name="**/HDFSRegionOperationsJUnitTest.class"/>
+      <include name="**/HDFSQueueRegionOperationsJUnitTest.class"/>
+      <include name="**/HDFSRegionOperationsOffHeapJUnitTest.class"/>
+      <include name="**/HDFSQueueRegionOperationsOffHeapJUnitTest.class"/>
+      <include name="**/hdfs/internal/hoplog/mapreduce/*JUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-hdfs-tests">
+      <include name="**/hdfs/*DUnitTest.class"/>
+      <include name="**/hdfs/internal/*DUnitTest.class"/>
+      <include name="**/hdfs/internal/hoplog/*DUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-swarm-tests">
+      <include name="com/gemstone/gemfire/cache/ConnectionPoolDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/admin/DistributionLocatorDUnitTest.class"/>
+    </patternset>
+    <patternset id="missing-file-tests">
+      <include name="com/gemstone/gemfire/cache30/DiskDistributedNoAckAsyncRegionTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/DistributedAckPersistentRegionCCEDUnitTest.class"/>
+    </patternset>
+    <patternset id="dunit-test-debug">
+      <include name="com/gemstone/gemfire/cache30/RegionReliabilityListenerTest.class"/>
+      <!--
+      1 build    builds       1282 Apr 13 16:41 com.gemstone.gemfire.admin.DistributionLocatorDUnitTest.txt
+      1 build    builds       3602 Apr 13 17:46 com.gemstone.gemfire.cache.query.partitioned.PRBasicIndexCreationDUnitTest.txt
+      1 build    builds       1423 Apr 13 18:01 com.gemstone.gemfire.cache30.CacheRegionsReliablityStatsCheckTest.txt
+      1 build    builds       4892 Apr 13 18:37 com.gemstone.gemfire.cache30.PartitionedRegionMembershipListenerDUnitTest.txt
+      1 build    builds       2881 Apr 13 18:37 com.gemstone.gemfire.cache30.ReconnectDUnitTest.txt
+      1 build    builds       4708 Apr 13 18:39 com.gemstone.gemfire.cache30.RegionMembershipListenerDUnitTest.txt
+      1 build    builds      11855 Apr 13 18:40 com.gemstone.gemfire.cache30.RegionReliabilityDistAckTest.txt
+      1 build    builds       8831 Apr 13 18:41 com.gemstone.gemfire.cache30.RegionReliabilityDistNoAckTest.txt
+      1 build    builds      10319 Apr 13 18:41 com.gemstone.gemfire.cache30.RegionReliabilityGlobalTest.txt
+      1 build    builds       1304 Apr 13 18:41 com.gemstone.gemfire.cache30.RegionReliabilityListenerTest.txt
+      1 build    builds       1263 Apr 13 18:42 com.gemstone.gemfire.cache30.RequiredRolesTest.txt
+      -->
+    </patternset>
+    <patternset id="dunit-me-tests">
+      <include name="com/gemstone/gemfire/cache/query/partitioned/PRBasicIndexCreationDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/old_BridgeMembershipDUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/cache/ha/old_HARQueueNewImplDUnitTest.class"/>
+    </patternset>
+    <patternset id="core-gemfire-tests">
+      <include name="com/gemstone/gemfire/internal/SimpleOsgiJUnitTest.class"/>
+      <include name="com/gemstone/gemfire/internal/lang/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/internal/net/**/*Test.class"/>
+      <include name="com/gemstone/gemfire/internal/util/ArrayUtilsTest.class"/>
+      <include name="com/gemstone/gemfire/internal/util/CollectionUtilsTest.class"/>
+      <include name="com/gemstone/gemfire/internal/util/IOUtilsTest.class"/>
+    </patternset>
+    <patternset id="restapi-gemfire-tests">
+      <include name="com/gemstone/gemfire/management/internal/web/**/*Test.class"/>
+    </patternset>
+
+    <patternset id="junit-compression-tests">
+      <include name="com/gemstone/gemfire/internal/compression/**/*JUnitTest.class"/>
+    </patternset>
+
+    <patternset id="dunit-compression-tests">
+      <include name="com/gemstone/gemfire/internal/compression/**/*DUnitTest.class"/>
+      <include name="com/gemstone/gemfire/cache30/**/*CompressionDUnitTest.class"/>
+    </patternset>
+  </target>
+
+  <target name="define-query-tests">
+    <property name="dunit.testlist" value="dunit-query-tests"/>
+  </target>
+
+  <target name="define-txteam-tests">
+    <property name="junit.testlist" value="junit-txteam-tests"/>
+    <property name="dunit.testlist" value="dunit-txteam-tests"/>
+  </target>
+
+  <target name="define-statistics-tests">
+    <property name="junit.testlist" value="junit-statistics-tests"/>
+    <property name="dunit.testlist" value="dunit-statistics-tests"/>
+  </target>
+
+  <target name="define-admin-tests">
+    <property name="junit.testlist" value="junit-admin-tests"/>
+    <property name="dunit.testlist" value="dunit-admin-tests"/>
+  </target>
+	
+  <target name="define-compression-tests">
+    <property name="junit.testlist" value="junit-compression-tests"/>
+    <property name="dunit.testlist" value="dunit-compression-tests"/>
+  </target>
+
+  <target name="define-dls-tests">
+    <property name="junit.testlist" value="junit-dls-tests"/>
+    <property name="dunit.testlist" value="dunit-dls-tests"/>
+  </target>
+
+  <target name="define-licensing-tests">
+    <property name="junit.testlist" value="junit-licensing-tests"/>
+    <property name="dunit.testlist" value="dunit-licensing-tests"/>
+  </target>
+
+  <target name="define-management-tests">
+    <property name="junit.testlist" value="junit-management-tests"/>
+    <property name="dunit.testlist" value="dunit-management-tests"/>
+    <if>
+      <istrue value="${useHTTP}"/>
+      <then>
+        <echo level="info" message="Running GemFire Management DUnit test suite with HTTP."/>
+      </then>
+    </if>
+  </target>
+
+  <target name="define-launcher-tests">
+    <property name="junit.testlist" value="junit-launcher-tests"/>
+    <property name="dunit.testlist" value="dunit-launcher-tests"/>
+  </target>
+
+  <target name="define-memscale-tests">
+    <property name="junit.testlist" value="junit-memscale-tests"/>
+    <property name="dunit.testlist" value="dunit-memscale-tests"/>
+  </target>
+
+  <target name="define-core-gemfire-tests">
+    <property name="junit.testlist" value="core-gemfire-tests"/>
+  </target>
+
+  <target name="define-restapi-gemfire-tests">
+    <property name="junit.testlist" value="restapi-gemfire-tests"/>
+  </target>
+
+  <target name="define-persist-tests">
+    <property name="junit.testlist" value="junit-persist-tests"/>
+    <property name="dunit.testlist" value="dunit-persist-tests"/>
+  </target>
+
+  <target name="define-hdfs-tests">
+    <property name="junit.testlist" value="junit-hdfs-tests"/>
+    <property name="dunit.testlist" value="dunit-hdfs-tests"/>
+  </target>
+
+  <target name="-define-test-macros" unless="define-test-macros.done">
+    <property name="define-test-macros.done" value="true"/>
+    <taskdef classname="batterytest.greplogs.GrepLogsAntTask" classpath="${tests.classes.dir}" name="greplogs"/>
+    <macrodef name="error-grep">
+      <attribute name="sourceDir"/>
+      <attribute name="outFile" default="@{sourceDir}/error.grep"/>
+      <attribute name="threshold" default="0"/>
+      <sequential>
+        <greplogs outFile="@{outFile}"
+                  sourceDir="@{sourceDir}"
+                  threshold="@{threshold}"/>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="run-junit">
+      <attribute name="testGroup" default="${junit.testlist}"/>
+      <attribute name="results" default="NOT_SET"/>
+      <attribute name="extra-classpath-ref" default="empty.classpath"/>
+      <attribute name="junit-classpath-ref" default="junit.classpath"/>
+      <attribute name="suite" default="junit"/>
+      <attribute name="jvm" default="${unittest.java32}"/>
+      <attribute name="junitTestsDir" default="${tests.classes.dir}"/>
+      <attribute name="dprop" default="${d32prop}"/>
+      <attribute name="ld.library.dir" default="${hiddenlib.dir}"/>
+      <attribute name="extra.jtests.dir" default="NOT_SET"/>
+      <attribute name="threshold" default="0"/>
+      <attribute name="lang" default="en_US.UTF-8"/>
+      <attribute name="test-mode-non-tx" default="true"/>
+      <element name="junit-configuration-elements" implicit="false" optional="true"/>
+
+      <sequential>
+        <delete dir="@{results}" quiet="true"/>
+        <mkdir dir="@{results}/failures"/>
+        <mkdir dir="@{results}/xml-reports"/>
+
+        <!--only needed for quickstart, but its fast so I'll do it all the time-->
+        <mkdir dir="@{results}/xml"/>
+        <copy todir="@{results}/xml">
+          <fileset dir="${templates.dir}/security">
+            <include name="authz5_5.dtd"/>
+          </fileset>
+          <fileset dir="${tests.src.dir}/lib">
+            <include name="authz-ldap.xml"/>
+          </fileset>
+        </copy>
+
+        <!-- check for empty fileset -->
+        <fileset dir="@{junitTestsDir}" id="@{suite}.fileset">
+          <patternset refid="@{testGroup}"/>
+        </fileset>
+        <pathconvert targetos="unix" refid="@{suite}.fileset" property="@{suite}.fileset.notempty" setonempty="false"/>
+        <fail message="Empty testGroup for @{suite}, @{testgroup}. You may have mistyped your testcase."
+              unless="@{suite}.fileset.notempty"/>
+        <taskdef classname="com.gemstone.gemfire.internal.AvailablePortTask"
+                 name="available-port">
+          <classpath>
+            <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+          </classpath>
+        </taskdef>
+        <available-port portProperty="jg.port" protocol="socket"/>
+
+        <echo file="@{results}/gemfire.properties" level="info">
+        mcast-port=${jg.port}
+        log-level=${logLevel}
+        </echo>
+
+        <echo message="Running @{suite} tests  ... " level="info"/>
+        <junit dir="@{results}" 
+               failureProperty="@{suite}.unit.tests.failed"
+               haltOnFailure="false" jvm="${shell}" enableTestListenerEvents="${codecoverage}" 
+               includeantruntime="false" tempdir="@{results}">
+          <assertions>
+            <enable/>
+          </assertions>
+          <sysproperty key="gemfire.osgi.version" value="${gemfire.osgi.version}"/>
+          <sysproperty key="antlr.version" value="${antlr.version}"/>
+          <sysproperty key="gemfire.disableManagement" value="${gemfire.disableManagement}"/>
+          <sysproperty key="quickstart.test.ENABLE_TRACING" value="${quickstart.test.ENABLE_TRACING}"/>
+          <jvmarg value="${shell.arg}"/>
+          <jvmarg value="${tests.bin.dir}/runtest${bat}"/>
+          <jvmarg value="@{results}/failures"/>
+          <jvmarg value="@{jvm}"/>
+          <classpath>
+            <path refid="@{extra-classpath-ref}"/>
+            <path refid="@{junit-classpath-ref}"/>
+            <!-- GemFireConnectionFactoryTest.testGetPropertyFileURL
+                 requires a directory to be on the classpath -->
+            <pathelement location="@{results}"/>
+          </classpath>
+          <env key="GEMFIRE" value="${product.dir}"/>
+          <env key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+          <env key="INDEXQUERYXMLWITHERRORFILE" value="${tests.lib.dir}/cachequeryindexwitherror.xml"/>
+          <env key="INDEXQUERYXMLFILE" value="${tests.lib.dir}/cachequeryindex.xml"/>
+          <env key="QUERYXMLFILE" value="${tests.lib.dir}/cachequery.xml"/>
+          <env key="JTAXMLFILE" value="${tests.lib.dir}/cachejta.xml"/>
+          <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+          <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+          <env key="${library.path}" value="@{ld.library.dir}"/>
+          <env key="PATH" value="${product.dir}/bin${path.separator}${myenv.PATH}"/>
+          <env key="LANG" value="@{lang}"/>
+          <sysproperty key="GEMFIRE" value="${product.dir}"/>
+          <sysproperty key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+          <sysproperty key="INDEXQUERYXMLWITHERRORFILE" value="${tests.lib.dir}/cachequeryindexwitherror.xml"/>
+          <sysproperty key="INDEXQUERYXMLFILE" value="${tests.lib.dir}/cachequeryindex.xml"/>
+          <sysproperty key="QUERYXMLFILE" value="${tests.lib.dir}/cachequery.xml"/>
+          <sysproperty key="JTAXMLFILE" value="${tests.lib.dir}/cachejta.xml"/>
+          <sysproperty key="JTESTS" value="${tests.classes.dir}"/>
+          <sysproperty key="EXTRA_JTESTS" value="@{extra.jtests.dir}"/>
+          <sysproperty key="TESTDIR" value="${tests.src.dir}"/>
+          <sysproperty key="osbuild.dir" value="${osbuild.dir}"/>
+          <sysproperty key="DistributionManager.VERBOSE" value="${dmVerbose}"/>
+          <sysproperty key="TEST_MODE_NON_TX" value="@{test-mode-non-tx}"/>
+          <!-- uncomment the following line if you junit is running out of mem due to verbose logging -->
+          <!--      <sysproperty key="gemfire.log-file" value="myjunit.log"/> -->
+          <!-- <sysproperty key="disk.TRACE_WRITES" value="true"/> -->
+          <!-- <sysproperty key="disk.TRACE_RECOVERY" value="true"/> -->
+          <sysproperty key="gemfire.DEFAULT_MAX_OPLOG_SIZE" value="10"/>
+          <sysproperty key="gemfire.disallowMcastDefaults" value="true"/>
+          <sysproperty key="gemfire.debug" value="${gemfire.debug}"/>
+          <sysproperty key="gemfirexd.debug.true" value="${gemfirexd.debug.true}"/>
+          <sysproperty key="java.library.path" value="${hiddenlib.dir}${path.separator}${java.library.path}"/>
+          <sysproperty key="test.use-odbc-bridge" value="${gemfirexd.odbc.testrun}"/>
+          <sysproperty key="http.proxyHost" value="${http.proxyHost}"/>
+          <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+          <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+          <!-- allow running in background that gets stuck due to jline usage of ij -->
+          <sysproperty key="jline.terminal" value="scala.tools.jline.UnsupportedTerminal"/>
+          <sysproperty key="DISABLE_SYNC_WRITES_FOR_TESTS" value="true"/>
+          <sysproperty key="java.awt.headless" value="true"/>
+          <jvmarg value="-Xmx2g"/>
+          <jvmarg value="-Xms768M"/>
+          <jvmarg value="-XX:MaxPermSize=128m"/>
+          <jvmarg value="-XX:+HeapDumpOnOutOfMemoryError"/>
+          <jvmarg value="@{dprop}"/>
+          <jvmarg line="${dunit-extra-jvm-args}"/>
+          <jvmarg line="${jacoco-agent.config}"/>
+          <junit-configuration-elements/>
+
+          <!--  we set usefile to false because the runtest.sh takes care of
+                creating the output file -->
+          <formatter type="plain" usefile="false"/>
+          <formatter classname="org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatterTerse" extension=".xml"/>
+          <batchtest fork="yes" todir="@{results}/xml-reports">
+            <fileset dir="@{junitTestsDir}">
+              <patternset refid="@{testGroup}"/>
+            </fileset>
+          </batchtest>
+        </junit>
+        <delete-disk-store-files dir="@{results}"/>
+
+        <!-- Rename the following test output to hide it from errors grep -->
+        <move todir="@{results}">
+          <fileset dir="@{results}">
+            <!-- include name="*.BindDistributedSystemTest.txt"/ -->
+            <include name="*.LicenseCheckerJUnitTest.txt"/>
+            <include name="*.ClientLicenseCheckerJUnitTest.txt"/>
+          </fileset>
+          <globmapper from="*.txt" to="*."/>
+        </move>
+
+        <error-grep sourceDir="@{results}" threshold="@{threshold}"/>
+
+        <conditional if="@{suite}.unit.tests.failed">
+          <echo message="FAILED: @{suite} tests failures in @{results}/failures" level="error"/>
+          <echo append="true" file="@{results}/TestFailures" message="FAILED: @{suite} tests failures in @{results}/failures" level="error"/>
+          <fail message="FAILED: One or more @{suite} tests failed"/>
+        </conditional>
+        <conditional unless="@{suite}.unit.tests.failed">
+          <echo level="info" message="Info: all @{suite} tests ran successfully."/>
+          <delete dir="@{results}/failures" quiet="true"/>
+        </conditional>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="delete-disk-store-files">
+      <attribute name="dir"/>
+      <sequential>
+        <conditional unless="saveDiskStoreFiles">
+          <echo message="Deleting disk store files from @{dir}..." level="info"/>
+          <delete>
+            <fileset dir="@{dir}">
+              <include name="**/*.crf"/>
+              <include name="**/*.drf"/>
+              <include name="**/*.if"/>
+              <include name="**/*.krf"/>
+            </fileset>
+          </delete>
+        </conditional>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="run-parallel-junit-part">
+      <attribute name="testGroup" default="${junit.testlist}"/>
+      <attribute name="results-prefix" default="${jresults}"/>
+      <attribute name="extra-classpath-ref" default="empty.classpath"/>
+      <attribute name="junit-classpath-ref" default="junit.classpath"/>
+      <attribute name="suite-prefix" default="junit"/>
+      <attribute name="jvm" default="${unittest.java32}"/>
+      <attribute name="junitTestsDir" default="${tests.classes.dir}"/>
+      <attribute name="dprop" default="${d32prop}"/>
+      <attribute name="ld.library.dir" default="${hiddenlib.dir}"/>
+      <attribute name="extra.jtests.dir" default="NOT_SET"/>
+      <attribute name="threshold" default="0"/>
+      <attribute name="lang" default="en_US.UTF-8"/>
+      <element name="junit-configuration-elements" implicit="false" optional="true"/>
+
+      <!--<stopwatch name="timer${junit.division.num}" />
+      <run-junit results="${tests.results.dir}/java" threshold="${threshold.java}"
+                 junit.division.total="${junit.division.total}"
+                 junit.division.num="${junit.division.num}" />
+      <stopwatch name="timer${junit.division.num}" action="total" />-->
+      <sequential>
+        <property name="suite" value="@{suite-prefix}-${junit.division.num}"/>
+        <property name="results" value="@{results-prefix}/site-${junit.division.num}" />
+
+        <echo message="started site ${junit.division.num}" />
+        <mkdir dir="${results}" />
+        <mkdir dir="${results}/failures"/>
+        <mkdir dir="${results}/xml-reports"/>
+
+        <!--only needed for quickstart, but its fast so I'll do it all the time-->
+        <mkdir dir="${results}/xml"/>
+        <copy todir="${results}/xml">
+          <fileset dir="${templates.dir}/security">
+            <include name="authz5_5.dtd"/>
+          </fileset>
+          <fileset dir="${tests.src.dir}/lib">
+            <include name="authz-ldap.xml"/>
+          </fileset>
+        </copy>
+
+        <taskdef classname="com.gemstone.gemfire.internal.AvailablePortTask"
+                 name="available-port">
+          <classpath>
+            <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+          </classpath>
+        </taskdef>
+        <available-port portProperty="jg.port" protocol="socket"/>
+
+        <echo file="${results}/gemfire.properties" level="info">
+        mcast-port=${jg.port}
+        log-level=${logLevel}
+        </echo>
+
+        <echo message="Running ${suite} tests  ... " level="info"/>
+        <junit dir="${results}"
+               failureProperty="failed"
+               haltOnFailure="false" jvm="${shell}" enableTestListenerEvents="${codecoverage}"
+               includeantruntime="false" tempdir="${results}">
+          <assertions>
+            <enable/>
+          </assertions>
+          <sysproperty key="gemfire.osgi.version" value="${gemfire.osgi.version}"/>
+          <sysproperty key="antlr.version" value="${antlr.version}"/>
+          <sysproperty key="gemfire.disableManagement" value="${gemfire.disableManagement}"/>
+          <jvmarg value="${shell.arg}"/>
+          <jvmarg value="${tests.bin.dir}/runtest${bat}"/>
+          <jvmarg value="${results}/failures"/>
+          <jvmarg value="@{jvm}"/>
+
+          <classpath>
+            <path refid="@{extra-classpath-ref}"/>
+            <path refid="@{junit-classpath-ref}"/>
+            <!-- GemFireConnectionFactoryTest.testGetPropertyFileURL
+                 requires a directory to be on the classpath -->
+            <pathelement location="${results}"/>
+          </classpath>
+          <env key="GEMFIRE" value="${product.dir}"/>
+          <env key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+          <env key="INDEXQUERYXMLWITHERRORFILE" value="${tests.lib.dir}/cachequeryindexwitherror.xml"/>
+          <env key="INDEXQUERYXMLFILE" value="${tests.lib.dir}/cachequeryindex.xml"/>
+          <env key="QUERYXMLFILE" value="${tests.lib.dir}/cachequery.xml"/>
+          <env key="JTAXMLFILE" value="${tests.lib.dir}/cachejta.xml"/>
+          <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+          <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+          <env key="${library.path}" value="@{ld.library.dir}"/>
+          <env key="PATH" value="${product.dir}/bin${path.separator}${myenv.PATH}"/>
+          <env key="LANG" value="@{lang}"/>
+          <sysproperty key="GEMFIRE" value="${product.dir}"/>
+          <sysproperty key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+          <sysproperty key="INDEXQUERYXMLWITHERRORFILE" value="${tests.lib.dir}/cachequeryindexwitherror.xml"/>
+          <sysproperty key="INDEXQUERYXMLFILE" value="${tests.lib.dir}/cachequeryindex.xml"/>
+          <sysproperty key="QUERYXMLFILE" value="${tests.lib.dir}/cachequery.xml"/>
+          <sysproperty key="JTAXMLFILE" value="${tests.lib.dir}/cachejta.xml"/>
+          <sysproperty key="JTESTS" value="${tests.classes.dir}"/>
+          <sysproperty key="EXTRA_JTESTS" value="@{extra.jtests.dir}"/>
+          <sysproperty key="TESTDIR" value="${tests.src.dir}"/>
+          <sysproperty key="osbuild.dir" value="${osbuild.dir}"/>
+          <sysproperty key="DistributionManager.VERBOSE" value="${dmVerbose}"/>
+          <sysproperty key="TEST_MODE_NON_TX" value="${test-mode-non-tx}"/>
+          <!-- uncomment the following line if you junit is running out of mem due to verbose logging -->
+          <!-- <sysproperty key="gemfire.log-file" value="myjunit.log"/> -->
+          <!-- <sysproperty key="disk.TRACE_WRITES" value="true"/> -->
+          <!-- <sysproperty key="disk.TRACE_RECOVERY" value="true"/> -->
+          <sysproperty key="gemfire.DEFAULT_MAX_OPLOG_SIZE" value="10"/>
+          <sysproperty key="gemfire.disallowMcastDefaults" value="true"/>
+          <sysproperty key="gemfire.debug" value="${gemfire.debug}"/>
+          <sysproperty key="gemfirexd.debug.true" value="${gemfirexd.debug.true}"/>
+          <sysproperty key="java.library.path" value="${hiddenlib.dir}${path.separator}${java.library.path}"/>
+          <sysproperty key="test.use-odbc-bridge" value="${gemfirexd.odbc.testrun}"/>
+          <sysproperty key="http.proxyHost" value="${http.proxyHost}"/>
+          <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+          <!-- allow running in background that gets stuck due to jline usage of ij -->
+          <sysproperty key="jline.terminal" value="scala.tools.jline.UnsupportedTerminal"/>
+          <sysproperty key="java.awt.headless" value="true"/>
+          <sysproperty key="DISABLE_SYNC_WRITES_FOR_TESTS" value="true"/>
+          <jvmarg value="-Xmx2g"/>
+          <jvmarg value="-Xms768M"/>
+          <jvmarg value="-XX:MaxPermSize=128m"/>
+          <jvmarg value="-XX:+HeapDumpOnOutOfMemoryError"/>
+          <jvmarg value="@{dprop}"/>
+          <jvmarg line="${dunit-extra-jvm-args}"/>
+          <jvmarg line="${jacoco-agent.config}"/>
+          <!--  we set usefile to false because the runtest.sh takes care of
+                creating the output file -->
+          <formatter type="plain" usefile="false"/>
+          <formatter classname="org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatterTerse" extension=".xml"/>
+          <batchtest fork="yes" todir="${results}/xml-reports">
+            <fileset dir="@{junitTestsDir}">
+              <patternset refid="@{testGroup}"/>
+              <custom classname="com.gemstone.tools.ant.selector.JunitTestsDivider" classpath="${basedir}/buildfiles/taskdefsV10.jar">
+                <param name="divisor" value="${junit.division.total}" />
+                <param name="part" value="${junit.division.num}" />
+              </custom>
+            </fileset>
+          </batchtest>
+        </junit>
+        <echo message="trying to delete disk store files from ${results}" />
+        <!--<delete-disk-store-files dir="${results}"/>-->
+        <conditional unless="saveDiskStoreFiles">
+          <echo message="Deleting disk store files from ${results}..." level="info"/>
+          <delete>
+            <fileset dir="${results}">
+              <include name="**/*.crf"/>
+              <include name="**/*.drf"/>
+              <include name="**/*.if"/>
+              <include name="**/*.krf"/>
+            </fileset>
+          </delete>
+        </conditional>
+
+        <!-- Rename the following test output to hide it from errors grep -->
+        <move todir="${results}">
+          <fileset dir="${results}">
+            <!-- include name="*.BindDistributedSystemTest.txt"/ -->
+            <include name="*.LicenseCheckerJUnitTest.txt"/>
+            <include name="*.ClientLicenseCheckerJUnitTest.txt"/>
+          </fileset>
+          <globmapper from="*.txt" to="*."/>
+        </move>
+
+        <echo message="shutting down site ${junit.division.num}" />
+      </sequential>
+    </macrodef>
+
+    <macrodef name="unitTest-battery">
+      <attribute name="resultsDir" default="${tests.results.dir}"/>
+      <attribute name="releaseDir" default="${gcm.dir}/where/gemfireXD/releases"/>
+      <attribute name="jvm" default="${unittest.java32}"/>
+      <attribute name="bt.file" default="NOT_SET"/>
+      <attribute name="type" default="NOT_SET"/>
+      <attribute name="dprop" default="${d32prop}"/>
+      <attribute name="threshold" default="0"/>
+      <attribute name="batterytest-classpath-ref" default="batterytest.classpath"/>
+      <!-- Needed because dunit-tests.bt is generated within the results directory -->
+      <attribute name="skipHydraClean" default=""/>
+      <attribute name="extra.dtests.dir" default=""/>
+      <sequential>
+        <if>
+          <and>
+            <equals arg1="${isSolaris}" arg2="true"/>
+            <equals arg1="@{dprop}" arg2="${d64prop}"/>
+          </and>
+          <then>
+            <!--touch the file so the append succeeds.-->
+            <mkdir dir="@{resultsDir}/@{type}"/>
+            <touch file="@{resultsDir}/@{type}/local.conf"/>
+            <echo append="true"
+                  file="@{resultsDir}/@{type}/local.conf" level="info">
+hydra.VmPrms-type = d64;
+            </echo>
+          </then>
+        </if>
+        <trycatch>
+          <try>
+            <antcall target="execute-battery-nobuild">
+              <param name="skip.hydra.clean" value="@{skipHydraClean}"/>
+              <param name="testJVM" value="@{jvm}"/>
+              <param name="bt.file" value="@{bt.file}"/>
+              <param name="bt.release.dir" value="@{releaseDir}"/>
+              <param name="bt.result.dir" value="@{resultsDir}/@{type}"/>
+              <param name="bt.nukeHungTest" value="${NukeHungTests}"/>
+              <param name="unittest.type" value="@{type}"/>
+              <param name="extra.jtests.dir" value="@{extra.dtests.dir}"/>
+            </antcall>
+          </try>
+          <finally>
+            <delete-disk-store-files dir="@{resultsDir}/@{type}"/>
+            <conditional unless="skip.error.grep">
+              <error-grep sourceDir="@{resultsDir}/@{type}" threshold="@{threshold}"/>
+             </conditional>
+          </finally>
+        </trycatch>
+      </sequential>
+    </macrodef>
+  </target>
+</project>

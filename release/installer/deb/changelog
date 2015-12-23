@@ -1,0 +1,7 @@
+pivotal-gemfirexd (@VERSION@-@BUILDNUMBER@) experimental; urgency=low
+
+  * Converted from .rpm format to .deb by alien version 8.88
+  
+  - Pivotal GemFire XD @VERSION@-@BUILDNUMBER@ Release
+
+ -- Pivotal <support@gopivotal.com>  Wed, 09 Oct 2013 15:02:14 -0700

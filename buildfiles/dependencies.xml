@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dependencies">
+
+  <macrodef name="getdependency">
+    
+    <!-- Set defaults for attributes -->
+    <attribute name="name" default="NO.NAME.SPECIFIED"/>
+    <attribute name="location" default="NO.LOCATION.SPECIFIED"/>
+    <attribute name="type" default="file"/>
+    <attribute name="forClasspath" default="true"/>
+    <attribute name="sourcePath" default=""/>
+    <sequential>
+
+      <!-- Verify name is set -->
+      <if>
+        <or>
+          <equals arg1="@{name}" arg2="NO.NAME.SPECIFIED"/>
+          <equals arg1="@{name}" arg2=""/>
+        </or>
+        <then>
+          <fail message="No name for dependency specified"/>
+        </then>
+      </if>
+      
+      <!-- Verify location is set -->
+      <if>
+        <or>
+          <equals arg1="@{location}" arg2="NO.LOCATION.SPECIFIED"/>
+          <equals arg1="@{location}" arg2=""/>
+        </or>
+        <then>
+          <fail message="No location for dependency @{name} specified"/>
+        </then>
+      </if>
+      
+      <!-- Verify type is set -->
+      <if>
+        <or>
+          <equals arg1="@{type}" arg2="NO.TYPE.SPECIFIED"/>
+          <equals arg1="@{type}" arg2=""/>
+        </or>
+        <then>
+          <fail message="No type defined for dependency. Please specify type as file or dir"/>
+        </then>
+      </if>
+      
+      <!-- Verify gcm.dir is set -->
+      <if>
+        <or>
+          <equals arg1="${gcm.dir}" arg2=""/>
+          <not>
+            <isset property="gcm.dir"/>
+          </not>
+        </or>
+        <then>
+          <fail message="Property gcm.dir must be set"/>
+        </then>
+      </if>
+      
+      <!-- Logic for keeping local.gcm.dir up-to-date -->
+      <if>
+        <!-- Check to see if local.gcm.dir is set -->
+        <isset property="local.gcm.dir"/>
+        <then>
+          <if>
+            <!-- Next, if local.gcm.dir is set then check to see if local.gcm.dir exists as a directory -->
+            <available file="${local.gcm.dir}" type="dir"/>
+            <then>
+              <if>
+                <!-- Check to see if dependency exists in the 'remote' gcm.dir -->
+                <available file="${gcm.dir}/@{location}"/>
+                <then>
+                  <!-- Check to see if the dependency is a file or directory, uptodate and copy tasks are different -->
+                  <if>
+                    <equals arg1="@{type}" arg2="file"/>
+                    <then>
+                      <if>
+                        <!-- Check to see if the file is up-to-date -->
+                        <not>
+                          <uptodate srcfile="${gcm.dir}/@{location}" targetfile="${local.gcm.dir}/@{location}"/>
+                        </not>
+                        <then>
+                          <echo level="info" message="Copying @{name}: ${gcm.dir}/@{location} to ${local.gcm.dir}/@{location}"/>
+                          <copy preservelastmodified="true" includeEmptyDirs="true" file="${gcm.dir}/@{location}" tofile="${local.gcm.dir}/@{location}"/>
+                        </then>
+                        <else/>
+                      </if>
+                    </then>
+                    <else>
+                      <!-- Dependency is a directory -->
+                      <if>
+                        <not>
+                          <uptodate>
+                            <srcfiles dir="${gcm.dir}/@{location}" includes="*"/>
+                            <mapper type="merge" to="${local.gcm.dir}/@{location}"/>
+                          </uptodate>
+                        </not>
+                        <then>
+                          <echo level="info" message="Copying @{name}: ${gcm.dir}/@{location} to ${local.gcm.dir}/@{location}"/>
+                          <copy preservelastmodified="true" includeEmptyDirs="true" todir="${local.gcm.dir}/@{location}">
+                            <fileset dir="${gcm.dir}/@{location}"/>
+                          </copy>
+                        </then>
+                      </if>
+                    </else>
+                  </if>
+                  <!-- Create property for dependency located under local.gcm.dir -->
+                  <property name="@{name}" value="${local.gcm.dir}/@{location}"/>
+                </then>
+                <else>
+                  <fail message="Missing resource for copying to local: ${gcm.dir}/@{location}"/>
+                </else>
+              </if>
+            </then>
+            <else>
+              <fail message="Unable to find directory: ${local.gcm.dir}"/>
+            </else>
+          </if>
+        </then>
+        <else>
+          <!-- local.gcm.dir is not set -->
+          <!-- Verify dependency is available, then set property -->
+          <if>
+            <available file="${gcm.dir}/@{location}"/>
+            <then>
+              <property name="@{name}" value="${gcm.dir}/@{location}"/>
+            </then>
+            <else>
+              <fail message="Missing resource: ${gcm.dir}/@{location}"/>
+            </else>
+          </if>
+        </else>
+      </if>
+
+      <!-- Logic for building a .classpath file -->
+      <if>
+        <and><isset property="eclipse.classpath.file"/><equals arg1="@{forClasspath}" arg2="true"/></and>
+        <then>
+          <if><equals arg1="@{sourcePath}" arg2=""/>
+            <then>
+              <echo file="${eclipse.classpath.file}" append="true">
+	&lt;classpathentry kind=&quot;var&quot; path=&quot;GCM_DIR/@{location}&quot;/&gt;</echo>
+            </then>
+            <else>
+              <echo file="${eclipse.classpath.file}" append="true">
+	&lt;classpathentry kind=&quot;var&quot; path=&quot;GCM_DIR/@{location}&quot; sourcePath=&quot;@{sourcePath}&quot;/&gt;</echo>
+            </else>
+          </if>
+        </then>
+      </if>
+
+    </sequential>
+  </macrodef>
+
+  <!-- if building a new .classpath file we need to start with an empty file -->
+  <if> <isset property="eclipse.classpath.file"/>
+    <then>
+      <available property="eclipse.classpath.file.exists" file="${eclipse.classpath.file}"/>
+      <conditional if="eclipse.classpath.file.exists">
+        <fail message="You have set eclipse.classpath.file but the file already exists.  Delete it to have a new one genereated"/>
+      </conditional>
+    </then>
+  </if>
+
+  <property name="activation.version" value="1.1"/>
+  <property name="activation.jar.name" value="activation.jar"/>
+
+  <property name="antlr.version" value="2.7.4"/>
+  <property name="antlr.jar.name" value="antlr.jar"/>
+
+  <property name="asm.version" value="3.0"/>
+  <property name="asm.jar.name" value="asm-${asm.version}.jar"/>
+
+  <property name="asm-tree.version" value="3.0"/>
+  <property name="asm-tree.jar.name" value="asm-${asm.version}.jar"/>
+
+  <property name="bcel.version" value="5.2"/>
+  <property name="bcel.jar.name" value="bcel.jar"/>
+
+  <property name="bundlor.version" value="1.0.0.RELEASE"/>
+  <property name="bundlor.jar.name" value="com.springsource.bundlor-${bundlor.version}.jar"/>
+  
+  <property name="bundlor.ant.version" value="1.0.0.RELEASE"/>
+  <property name="bundlor.ant.jar.name" value="com.springsource.bundlor.ant-${bundlor.ant.version}.jar"/>
+
+  <property name="bundlor.blint.version" value="1.0.0.RELEASE"/>
+  <property name="bundlor.blint.jar.name" value="com.springsource.bundlor.blint-${bundlor.blint.version}.jar"/>
+
+  <property name="cglib-nodep.version" value="2.1_3"/>
+  <property name="cglib-nodep.jar.name" value="cglib-nodep-${cglib-nodep.version}.jar"/>
+
+  <property name="citi-rdsmodel.version" value=""/>
+  <property name="citi-rdsmodel.jar.name" value="rdsmodel.jar"/>
+  
+  <property name="com-springsource-javax-transaction.version" value="1.1.0"/>
+  <property name="com-springsource-javax-transaction.jar.name" value="com.springsource.javax.transaction-${com-springsource-javax-transaction.version}.jar"/>
+
+  <property name="commons-cli.version" value="1.2"/>
+  <property name="commons-cli.jar.name" value="commons-cli-${commons-cli.version}.jar"/>
+
+  <property name="commons-codec.version" value="1.4"/>
+  <property name="commons-codec.jar.name" value="commons-codec-${commons-codec.version}.jar"/>
+
+  <property name="commons-collections.version" value="3.2.1"/>
+  <property name="commons-collections.jar.name" value="commons-collections-${commons-collections.version}.jar"/>
+  
+  <property name="commons-configuration.version" value="1.6"/>
+  <property name="commons-configuration.jar.name" value="commons-configuration-${commons-configuration.version}.jar"/>
+
+  <property name="commons-dbcp.version" value="1.2.1"/>
+  <property name="commons-dbcp.jar.name" value="commons-dbcp-${commons-dbcp.version}.jar"/>
+  
+  <property name="commons-fileupload.version" value="1.3"/>
+  <property name="commons-fileupload.jar.name" value="commons-fileupload-${commons-fileupload.version}.jar"/>
+
+  <property name="commons-io.version" value="2.3"/>
+  <property name="commons-io.jar.name" value="commons-io-${commons-io.version}.jar"/>
+ 
+  <property name="commons-lang.version" value="2.5"/>
+  <property name="commons-lang.jar.name" value="commons-lang-${commons-lang.version}.jar"/>
+  
+  <property name="commons-logging.version" value="1.1.1"/>
+  <property name="commons-logging.jar.name" value="commons-logging-${commons-logging.version}.jar"/>
+
+  <property name="commons-modeler.version" value="2.0"/>
+  <property name="commons-modeler.jar.name" value="commons-modeler-${commons-modeler.version}.jar"/>
+
+  <property name="derby.version" value="10.8.2.2"/>
+  <property name="derby.jar.name" value="derby.jar"/>
+  <property name="derbynet.jar.name" value="derbynet.jar"/>
+  <property name="derbyclient.jar.name" value="derbyclient.jar"/>
+  <property name="derbytools.jar.name" value="derbytools.jar"/>
+
+  <property name="dom4j.version" value="1.6.1"/>
+  <property name="dom4j.jar.name" value="dom4j-${dom4j.version}.jar"/>
+  
+  <property name="findbugs.version" value="2.0.2"/>
+  <property name="findbugs.dir" value="where/java/findbugs/findbugs-${findbugs.version}"/>
+  <property name="findbugs-annotations.jar.name" value="annotations.jar"/>
+  <property name="findbugs-ant.jar.name" value="findbugs-ant.jar"/>
+
+  <property name="guava.version" value="11.0.2"/>
+  <property name="guava.jar.name" value="guava-${guava.version}.jar"/>
+
+  <property name="hamcrest-core.version" value="1.1"/>
+  <property name="hamcrest-core.jar.name" value="hamcrest-core-${hamcrest-core.version}.jar"/>
+
+  <property name="hamcrest-library.version" value="1.1"/>
+  <property name="hamcrest-library.jar.name" value="hamcrest-library-${hamcrest-library.version}.jar"/>
+
+  <property name="ikvm.version" value="7.2.4630.5"/>
+
+  <property name="jackson.version" value="1.9.9"/>
+  <property name="jackson.jar.name" value="jackson-core-asl-${jackson.version}.jar"/>
+
+  <property name="jacoco.version" value="0.6.2"/>
+  <property name="jacoco.dir" value="where/java/jacoco/jacoco-${jacoco.version}"/>
+  <property name="jacoco-agent.jar.name" value="jacocoagent.jar"/>
+
+  <property name="jakarta-oro.version" value="2.0.8"/>
+  <property name="jakarta-oro.jar.name" value="jakarta-oro-${jakarta-oro.version}.jar"/>
+
+  <property name="jansi.version" value="1.8"/>
+  <property name="jansi.jar.name" value="jansi-${jansi.version}.jar"/>
+
+  <property name="javadoc-updater-tool.version" value="1.2.2013"/>
+  <property name="javadoc-updater-tool.jar.name" value="JavadocUpdaterTool-jdk1.6.jar"/>
+  
+  <property name="jdom.version" value="1.0beta8-dev"/>
+  <property name="jdom.jar.name" value="jdom.jar"/>
+
+  <property name="jetty-servlet-api.version" value="2.5-20081211"/>
+  <property name="jetty-servlet-api.jar.name" value="servlet-api-${jetty-servlet-api.version}.jar"/>
+  
+  <property name="jetty9.version" value="9.2.3.v20140905"/>
+  <property name="jetty9-http.jar.name" value="jetty-http-${jetty9.version}.jar"/>
+  <property name="jetty9-io.jar.name" value="jetty-io-${jetty9.version}.jar"/>
+  <property name="jetty9-security.jar.name" value="jetty-security-${jetty9.version}.jar"/>
+  <property name="jetty9-server.jar.name" value="jetty-server-${jetty9.version}.jar"/>
+  <property name="jetty9-servlet.jar.name" value="jetty-servlet-${jetty9.version}.jar"/>
+  <property name="jetty9-servlet-api.jar.name" value="servlet-api-3.1.jar"/>
+  <property name="jetty9-util.jar.name" value="jetty-util-${jetty9.version}.jar"/>
+  <property name="jetty9-webapp.jar.name" value="jetty-webapp-${jetty9.version}.jar"/>
+  <property name="jetty9-xml.jar.name" value="jetty-xml-${jetty9.version}.jar"/>
+
+  <property name="jline.version" value="1.0"/>
+  <property name="jline.jar.name" value="jline-${jline.version}.jar"/>
+
+  <property name="jline-s2.version" value="1.0.S2-B"/>
+  <property name="jline-s2.jar.name" value="jline-${jline-s2.version}.jar"/>
+
+  <property name="jmock.version" value="2.5.1"/>
+  <property name="jmock.jar.name" value="jmock-${jmock.version}.jar"/>
+  <property name="jmock.dir" value="where/java/jmock/jmock-${jmock.version}"/>
+
+  <property name="jmock-legacy.version" value="2.5.1"/>
+  <property name="jmock-legacy.jar.name" value="jmock-legacy-${jmock-legacy.version}.jar"/>
+
+  <property name="jna.version" value="4.0.0"/>
+  <property name="jna.jar.name" value="jna-${jna.version}.jar"/>
+
+  <property name="jsch.version" value="0.1.44"/>
+  <property name="jsch.jar.name" value="jsch-${jsch.version}.jar"/>
+
+  <property name="json-simple.version" value="1.1.1"/>
+  <property name="json-simple.jar.name" value="json-simple-${json-simple.version}.jar"/>
+
+  <property name="jsr305.version" value="1.3.9"/>
+  <property name="jsr305.jar.name" value="jsr305-${jsr305.version}.jar"/>
+
+  <property name="junit.version" value="4.11"/>
+  <property name="junit.jar.name" value="junit.jar"/>
+  <property name="junit.dir" value="where/java/junit/junit${junit.version}"/>
+
+  <property name="log4j.version" value="1.2.14"/>
+  <property name="log4j.jar.name" value="log4j-${log4j.version}.jar"/>
+
+  <property name="mail.version" value="1.4.5"/>
+  <property name="mail.jar.name" value="mail.jar"/>
+
+  <property name="mono.version" value="2.6"/>
+
+  <property name="multithreadedTC.version" value="1.01"/>
+  <property name="multithreadedTC.jar.name" value="MultithreadedTC-${multithreadedTC.version}.jar"/>
+
+  <property name="mx4j.version" value="2.0.1"/>
+  <property name="mx4j.jar.name" value="mx4j.jar"/>
+
+  <property name="mx4j-jmx.version" value="${mx4j.version}"/>
+  <property name="mx4j-jmx.jar.name" value="mx4j-jmx.jar"/>
+
+  <property name="mx4j-remote.version" value="${mx4j.version}"/>
+  <property name="mx4j-remote.jar.name" value="mx4j-remote.jar"/>
+
+  <property name="mx4j-tools.version" value="${mx4j.version}"/>
+  <property name="mx4j-tools.jar.name" value="mx4j-tools.jar"/>
+
+  <property name="objenesis.version" value="1.0"/>
+  <property name="objenesis.jar.name" value="objenesis-${objenesis.version}.jar"/>
+  
+  <property name="osgi.core.version" value="4.2"/>
+  <property name="osgi.core.jar.name" value="osgi.core.jar"/>
+
+  <property name="nunit.version" value="2.5.3"/>
+
+  <property name="postgresql.version" value="8.3-604.jdbc4"/>
+  <property name="postgresql.jar.name" value="postgresql-${postgresql.version}.jar"/>
+
+  <property name="pxf.version" value="2.3.0.0"/>
+  <property name="pxf.jar.name" value="pxf-api-${pxf.version}.jar"/>
+
+  <property name="slf4j-api.version" value="1.7.5"/>
+  <property name="slf4j-api.jar.name" value="slf4j-api-${slf4j-api.version}.jar"/>
+
+  <property name="slf4j-jdk14.version" value="1.7.5"/>
+  <property name="slf4j-jdk14.jar.name" value="slf4j-jdk14-${slf4j-api.version}.jar"/>
+
+  <property name="snappy.version" value="1.0.4.1"/>
+  <property name="snappy.jar.name" value="snappy-java-${snappy.version}.jar"/>
+  
+  <property name="sonar-ant-task.version" value="2.2"/>
+  <property name="sonar-ant-task.jar.name" value="sonar-ant-task-${sonar-ant-task.version}.jar"/>
+  
+  <property name="springframework.version" value="3.2.2"/>
+  <property name="spring-library.version" value="${springframework.version}.RELEASE"/>
+  
+  <property name="spring-aop.version" value="${spring-library.version}"/>
+  <property name="spring-aop.jar.name" value="spring-aop-${spring-aop.version}.jar"/>
+
+  <!--property name="spring-asm.version" value="${spring-library.version}"/>
+  <property name="spring-asm.jar.name" value="org.springframework.asm-${spring-asm.version}.jar"/-->
+
+  <property name="spring-aspects.version" value="${spring-library.version}"/>
+  <property name="spring-aspects.jar.name" value="spring-aspects-${spring-aspects.version}.jar"/>
+
+  <property name="spring-aws-ant.version" value="2.0"/>
+  <property name="spring-aws-ant.jar.name" value="spring-aws-ant-${spring-aws-ant.version}.jar"/>
+
+  <property name="spring-beans.version" value="${spring-library.version}"/>
+  <property name="spring-beans.jar.name" value="spring-beans-${spring-beans.version}.jar"/>
+
+  <property name="spring-context.version" value="${spring-library.version}"/>
+  <property name="spring-context.jar.name" value="spring-context-${spring-context.version}.jar"/>
+
+  <property name="spring-context-support.version" value="${spring-library.version}"/>
+  <property name="spring-context-support.jar.name" value="spring-context-support-${spring-context-support.version}.jar"/>
+
+  <property name="spring-core.version" value="${spring-library.version}"/>
+  <property name="spring-core.jar.name" value="spring-core-${spring-core.version}.jar"/>
+
+  <property name="spring-expression.version" value="${spring-library.version}"/>
+  <property name="spring-expression.jar.name" value="spring-expression-${spring-expression.version}.jar"/>
+
+  <property name="spring-jdbc.version" value="${spring-library.version}"/>
+  <property name="spring-jdbc.jar.name" value="spring-jdbc-${spring-jdbc.version}.jar"/>
+
+  <property name="spring-jms.version" value="${spring-library.version}"/>
+  <property name="spring-jms.jar.name" value="spring-jms-${spring-jms.version}.jar"/>
+
+  <property name="spring-orm.version" value="${spring-library.version}"/>
+  <property name="spring-orm.jar.name" value="spring-orm-${spring-orm.version}.jar"/>
+
+  <property name="spring-oxm.version" value="${spring-library.version}"/>
+  <property name="spring-oxm.jar.name" value="spring-oxm-${spring-oxm.version}.jar"/>
+
+  <property name="spring-shell.version" value="1.0.0"/>
+  <property name="spring-shell.release.version" value="${spring-shell.version}.RELEASE"/>
+  <property name="spring-shell.jar.name" value="spring-shell-${spring-shell.release.version}.jar"/>
+
+  <property name="spring-test.version" value="${spring-library.version}"/>
+  <property name="spring-test.jar.name" value="spring-test-${spring-test.version}.jar"/>
+
+  <property name="spring-transaction.version" value="${spring-library.version}"/>
+  <property name="spring-transaction.jar.name" value="spring-tx-${spring-transaction.version}.jar"/>
+
+  <property name="spring-web.version" value="${spring-library.version}"/>
+  <property name="spring-web.jar.name" value="spring-web-${spring-web.version}.jar"/>
+
+  <property name="spring-web-portlet.version" value="${spring-library.version}"/>
+  <property name="spring-web-portlet.jar.name" value="spring-webmvc-portlet-${spring-core.version}.jar"/>
+
+  <property name="spring-web-servlet.version" value="${spring-library.version}"/>
+  <property name="spring-web-servlet.jar.name" value="spring-webmvc-${spring-web-servlet.version}.jar"/>
+
+  <property name="spymemcached-client.version" value="2.6"/>
+  <property name="spymemcached-client.jar.name" value="spymemcached-${spymemcached-client.version}.jar"/>
+
+  <property name="thrift.version" value="0.9.1"/>
+  <property name="thrift.jar.name" value="libthrift-${thrift.version}.jar"/>
+
+  <property name="vijava.version" value="5b20110825"/>
+  <property name="vijava.jar.name" value="vijava${vijava.version}.jar"/>
+  
+  <property name="xom.version" value="1.2.9"/>
+  <property name="xom.jar.name" value="xom-${xom.version}.jar"/>
+
+  <!-- TODO review the dependencies and determine which ones are actually used. -->
+  <getdependency name="activation.jar" location="where/java/javaMail/${activation.jar.name}"/>
+  <getdependency name="ant.dependency.dir" type="dir" location="where/java/ant/apache-ant-1.8.4" forClasspath="false"/>
+  <getdependency name="antlr.jar" location="where/antlr/${antlr.jar.name}"/>
+  <getdependency name="attach.api.dir" type="dir" location="where/java/javadocs/jdk-1_6_0/jdk/api/attach/spec" forClasspath="false"/>
+  <getdependency name="bcel.jar" location="where/java/jakarta/commons/bcel/bcel-${bcel.version}/${bcel.jar.name}"/>
+  <getdependency name="bundlor.dir" type="dir" location="where/java/bundlor/bundlor-${bundlor.version}" forClasspath="false"/>
+  <getdependency name="citi-rdsmodel.jar" location="where/java/proprietary/${citi-rdsmodel.jar.name}"/>
+  <getdependency name="cglib-nodep.jar" location="${jmock.dir}/${cglib-nodep.jar.name}"/>
+  <getdependency name="com-springsource-javax-transaction.jar" location="where/java/osgi/${com-springsource-javax-transaction.jar.name}"/>
+  <getdependency name="commons-cli.jar" location="where/java/jakarta/commons/cli/${commons-cli.version}/${commons-cli.jar.name}" sourcePath="gemfirexd/tools/java/commons-cli-1.2-sources.jar"/>
+  <getdependency name="commons-codec.jar" location="where/java/jakarta/commons/codec/${commons-codec.version}/${commons-codec.jar.name}" />
+  <getdependency name="commons-configuration.jar" location="where/java/jakarta/commons/configuration/${commons-configuration.version}/${commons-configuration.jar.name}" />
+  <getdependency name="commons-collections.jar" location="where/java/jakarta/commons/collections/${commons-collections.version}/${commons-collections.jar.name}"/>
+  <getdependency name="commons-fileupload.jar" location="where/java/jakarta/commons/fileUpload/${commons-fileupload.version}/${commons-fileupload.jar.name}" />
+  <getdependency name="commons-io.jar" location="where/java/jakarta/commons/io/${commons-io.version}/${commons-io.jar.name}"/> <!-- spring-shell dependency -->
+  <getdependency name="commons-lang.jar" location="where/java/jakarta/commons/lang/${commons-lang.version}/${commons-lang.jar.name}" />
+  <getdependency name="commons-logging.jar" location="where/java/jakarta/commons/logging/${commons-logging.version}/${commons-logging.jar.name}"/> <!-- GFE & spring-shell dependency -->
+  <getdependency name="commons-modeler.jar" location="where/java/jakarta/commons/modeler/commons-modeler-${commons-modeler.version}/${commons-modeler.jar.name}"/>
+  <getdependency name="commons-modeler.api.dir" type="dir" location="where/java/jakarta/commons/modeler/commons-modeler-${commons-modeler.version}/docs/apidocs" forClasspath="false"/>
+  <getdependency name="contest.dir" type="dir" location="where/java/JavaConTest" forClasspath="false"/>
+  <dependency property="default.testVM" jdkVersion="${java.test.version}" is64Bit="false" artifact="where/jdk"/>
+  <dependency property="default.testVM64" jdkVersion="${java.test.version}" is64Bit="true" artifact="where/jdk"/>
+  <getdependency name="derby.jar" location="where/java/derby/derby-${derby.version}/jars/sane/${derby.jar.name}"/>
+  <getdependency name="derby.insane.jar" location="where/java/derby/derby-${derby.version}/jars/insane/${derby.jar.name}"/>
+  <getdependency name="derbynet.jar" location="where/java/derby/derby-${derby.version}/jars/sane/${derbynet.jar.name}"/>
+  <getdependency name="derbynet.insane.jar" location="where/java/derby/derby-${derby.version}/jars/insane/${derbynet.jar.name}"/>
+  <getdependency name="derbyclient.jar" location="where/java/derby/derby-${derby.version}/jars/sane/${derbyclient.jar.name}"/>
+  <getdependency name="derbyclient.insane.jar" location="where/java/derby/derby-${derby.version}/jars/insane/${derbyclient.jar.name}"/>
+  <getdependency name="derbytools.jar" location="where/java/derby/derby-${derby.version}/jars/sane/${derbytools.jar.name}"/>
+  <getdependency name="derbytools.insane.jar" location="where/java/derby/derby-${derby.version}/jars/insane/${derbytools.jar.name}"/>
+  <getdependency name="DiskConverter.zip" location="where/gftools/GFDiskFileConverter/DiskFileConverter_2495.zip"/>
+  <getdependency name="findbugs-ant.jar" location="${findbugs.dir}/lib/${findbugs-ant.jar.name}"/>
+  <getdependency name="findbugs-annotations.jar" location="${findbugs.dir}/lib/${findbugs-annotations.jar.name}"/>
+  <getdependency name="guava.jar" location="where/java/google/guava/${guava.version}/${guava.jar.name}" />
+  <getdependency name="jsr305.jar" location="where/java/jsr305/${jsr305.version}/${jsr305.jar.name}" />
+  <!-- Hadoop dependencies are in dependencies-hadoop.xml -->
+  <getdependency name="hamcrest-core.jar" location="${jmock.dir}/${hamcrest-core.jar.name}"/>
+  <getdependency name="hamcrest-library.jar" location="${jmock.dir}/${hamcrest-library.jar.name}"/>
+
+  <getdependency name="hibernate.332.jar" location="where/java/hibernate/hibernate-distribution-3.3.2.GA/hibernate3.jar"/>
+  <getdependency name="hibernate.351.jar" location="where/java/hibernate/hibernate-distribution-3.5.1-Final/hibernate3.jar"/>
+  <getdependency name="hibernate.401.jar" location="where/java/hibernate/hibernate-release-4.0.1.Final/lib/required/hibernate-core-4.0.1.Final.jar"/>
+  <getdependency name="hibernate.414.dir" type="dir" location="where/java/hibernate/hibernate-release-4.1.4.Final/lib/required" forClasspath="false"/>
+  <getdependency name="jackson.jar" location="where/java/json/${jackson.jar.name}"/>
+  <getdependency name="jansi.jar" location="where/java/jansi/${jansi.version}/${jansi.jar.name}"/> <!-- spring-shell dependency -->
+  <dependency property="javac.primary" jdkVersion="${javac.primary.version}" is64Bit="false" artifact="where/jdk"/>
+  <dependency property="javac.secondary" jdkVersion="${javac.secondary.version}" is64Bit="false" artifact="where/jdk"/>
+  <getdependency name="javadocs.api.dir" type="dir" location="where/java/javadocs/jdk-1_6_0/api" forClasspath="false"/>
+  <getdependency name="javadoc-updater-tool.jar" location="where/java/JavadocUpdaterTool/${javadoc-updater-tool.version}/${javadoc-updater-tool.jar.name}"/>
+  <!-- Jetty jars come from Hadoop, dependencies-hadoop.xml --> 
+
+  <!-- These are distributed with the product -->
+  <property name="jetty9.dir" value="where/java/jetty/jetty-9.2.3"/>
+  <getdependency name="jetty9-http.jar" location="${jetty9.dir}/${jetty9-http.jar.name}"/>
+  <getdependency name="jetty9-io.jar" location="${jetty9.dir}/${jetty9-io.jar.name}"/>
+  <getdependency name="jetty9-security.jar" location="${jetty9.dir}/${jetty9-security.jar.name}"/>
+  <getdependency name="jetty9-server.jar" location="${jetty9.dir}/${jetty9-server.jar.name}"/>
+  <getdependency name="jetty9-servlet.jar" location="${jetty9.dir}/${jetty9-servlet.jar.name}"/>
+  <getdependency name="jetty9-servlet-api.jar" location="${jetty9.dir}/${jetty9-servlet-api.jar.name}"/>
+  <getdependency name="jetty9-util.jar" location="${jetty9.dir}/${jetty9-util.jar.name}"/>
+  <getdependency name="jetty9-webapp.jar" location="${jetty9.dir}/${jetty9-webapp.jar.name}"/>
+  <getdependency name="jetty9-xml.jar" location="${jetty9.dir}/${jetty9-xml.jar.name}"/>
+
+  <getdependency name="jline-s2.jar" location="where/java/jline/${jline-s2.version}/${jline-s2.jar.name}"/> <!-- spring-shell & gfsh6.6 dependency -->
+  <getdependency name="jmock.jar" location="${jmock.dir}/${jmock.jar.name}"/>
+  <getdependency name="jmock-legacy.jar" location="${jmock.dir}/${jmock-legacy.jar.name}"/>
+  <getdependency name="jna.jar" location="where/java/jna/${jna.version}/${jna.jar.name}"/>
+  <getdependency name="jetty-servlet-api.jar" location="where/java/jetty/jetty-6.1.24/lib/${jetty-servlet-api.jar.name}"/>
+  <getdependency name="jsch.jar" location="where/java/jcraft/jsch/jsch-${jsch.version}/${jsch.jar.name}"/>
+  <getdependency name="json-simple.jar" location="where/java/json-simple/${json-simple.jar.name}"/>
+  <getdependency name="junit.jar" location="${junit.dir}/${junit.jar.name}"/>
+  <getdependency name="log4j.jar" location="where/java/log4j/${log4j.version}/${log4j.jar.name}"/>
+  <getdependency name="mail.jar" location="where/java/javaMail/${mail.jar.name}"/>
+  <getdependency name="multithreadedTC.jar" location="where/java/MultithreadedTC/MultithreadedTC-${multithreadedTC.version}/${multithreadedTC.jar.name}"/>
+  <getdependency name="mx4j.jar" location="where/java/jmx/mx4j-${mx4j.version}/lib/${mx4j.jar.name}"/>
+  <getdependency name="mx4j.api.dir" type="dir" location="where/java/jmx/mx4j-${mx4j.version}/docs/api" forClasspath="false"/>
+  <getdependency name="mx4j-remote.jar" location="where/java/jmx/mx4j-${mx4j.version}/lib/${mx4j-remote.jar.name}"/>
+  <getdependency name="mx4j-tools.jar" location="where/java/jmx/mx4j-${mx4j.version}/lib/${mx4j-tools.jar.name}"/>
+  <getdependency name="objenesis.jar" location="${jmock.dir}/${objenesis.jar.name}"/>
+  <getdependency name="oracle.jdbc.jar" location="where/jdbcdriver/oracle/jdbc/lib/classes12.jar"/>
+  <getdependency name="oracle.jdbc4.jar" location="where/jdbcdriver/oracle/jdbc/lib/ojdbc6.jar"/>
+  <getdependency name="osgi.core.jar" location="where/java/osgi/osgi-${osgi.core.version}/${osgi.core.jar.name}"/>
+  
+  <getdependency name="slf4j-api.jar" location="where/java/slf4j/api/${slf4j-api.version}/${slf4j-api.jar.name}"/>
+  <getdependency name="slf4j-jdk14.jar" location="where/java/slf4j/jdk14/${slf4j-jdk14.version}/${slf4j-jdk14.jar.name}"/>
+  <getdependency name="snappy.dir" type="dir" location="where/java/google/snappy/xerial/${snappy.version}" forClasspath="false"/>
+  <getdependency name="snappy.jar" location="where/java/google/snappy/xerial/${snappy.version}/${snappy.jar.name}"/>
+  <!-- Begin Spring Dependencies -->
+  <getdependency name="spring-aop.jar" location="where/java/spring/${springframework.version}/${spring-aop.jar.name}"/>
+  <!--getdependency name="spring-asm.jar" location="where/java/spring/${springframework.version}/${spring-asm.jar.name}"/-->
+  <getdependency name="spring-aspects.jar" location="where/java/spring/${springframework.version}/${spring-aspects.jar.name}"/>
+  <getdependency name="spring-beans.jar" location="where/java/spring/${springframework.version}/${spring-beans.jar.name}"/>
+  <getdependency name="spring-context.jar" location="where/java/spring/${springframework.version}/${spring-context.jar.name}"/>
+  <getdependency name="spring-context-support.jar" location="where/java/spring/${springframework.version}/${spring-context-support.jar.name}"/>
+  <getdependency name="spring-core.jar" location="where/java/spring/${springframework.version}/${spring-core.jar.name}" sourcePath="GCM_DIR/where/java/spring/spring-core/3.1/spring-core-3.1.1.RELEASE-sources.jar"/>
+  <getdependency name="spring-expression.jar" location="where/java/spring/${springframework.version}/${spring-expression.jar.name}"/>
+  <getdependency name="spring-jdbc.jar" location="where/java/spring/${springframework.version}/${spring-jdbc.jar.name}"/>
+  <getdependency name="spring-orm.jar" location="where/java/spring/${springframework.version}/${spring-orm.jar.name}"/>
+  <getdependency name="spring-oxm.jar" location="where/java/spring/${springframework.version}/${spring-oxm.jar.name}"/>
+  <getdependency name="spring-shell.jar" location="where/java/spring/spring-shell/${spring-shell.version}/${spring-shell.jar.name}" sourcePath="GCM_DIR/where/java/spring/spring-shell/1.0.0/spring-shell-1.0.0.RELEASE-sources.jar"/>
+  <getdependency name="spring-test.jar" location="where/java/spring/${springframework.version}/${spring-test.jar.name}"/>
+  <getdependency name="spring-transaction.jar" location="where/java/spring/${springframework.version}/${spring-transaction.jar.name}"/>
+  <getdependency name="spring-web.jar" location="where/java/spring/${springframework.version}/${spring-web.jar.name}"/>
+  <getdependency name="spring-web-portlet.jar" location="where/java/spring/${springframework.version}/${spring-web-portlet.jar.name}"/>
+  <getdependency name="spring-web-servlet.jar" location="where/java/spring/${springframework.version}/${spring-web-servlet.jar.name}"/>
+  <!-- End Spring Dependencies -->
+
+  <getdependency name="spymemcached-client.jar" location="where/java/spymemcached-${spymemcached-client.version}/${spymemcached-client.jar.name}" />
+
+  <getdependency name="felix.server.dir" type="dir" location="where/java/felix" forClasspath="false"/>
+  <getdependency name="virgo.server.dir" type="dir" location="where/java/virgo" forClasspath="false"/>
+  <getdependency name="vsd.dir" type="dir" location="where/vsd/70/vsd" forClasspath="false"/>
+  <getdependency name="wrapper-delta-pack.tar.gz" location="where/java/wrapper/community/wrapper-delta-pack-3.3.1.tar.gz" forClasspath="false"/>
+  <getdependency name="xom.jar" location="where/java/xom/${xom.version}/${xom.jar.name}"/>
+
+  <!-- Get hadoop dependencies -->
+  <import file="dependencies-hadoop.xml"/>
+</project>

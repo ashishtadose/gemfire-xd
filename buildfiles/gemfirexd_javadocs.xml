@@ -1,0 +1,70 @@
+<project name="gemfirexd-javadocs">
+
+  <!-- Builds the javadocs for the external API -->
+  <target name="-gfxd-external-javadocs">
+    <property name="gemfirexd.docs.japi.dir" 
+              value="${gemfirexd.docs.dir}/external/docs/japi"/>
+    <mkdir dir="${gemfirexd.docs.japi.dir}"/>
+    <javadoc executable="${javac.secondary}/bin/javadoc"
+             additionalparam="-breakiterator -Xwerror -XDignore.symbol.file"
+             maxmemory="512M"
+             locale="en_US" author="false"
+             encoding="UTF-8"
+             docencoding="UTF-8"
+             destdir="${gemfirexd.docs.japi.dir}" 
+             failonerror="true" 
+             nohelp="yes"
+             overview="${derby.src}/java/engine/external-overview.html" 
+             public="true"
+             sourcepath="${derby.src}/java/engine" 
+             splitindex="yes" use="yes" version="false"
+             windowtitle="Pivotal GemFire XD Java API Documentation">
+      <classpath>
+        <pathelement location="${gemfirexd.out.dir}/classes"/>
+        <pathelement location="${findbugs-annotations.jar}"/>
+        <pathelement location="${hadoop-annotations.jar}"/>
+        <pathelement location="${hadoop-auth.jar}"/>
+        <pathelement location="${hadoop-common.jar}"/>
+        <pathelement location="${hadoop-hdfs.jar}"/>
+        <pathelement location="${hadoop-mapreduce-client-core.jar}"/>
+        <fileset dir="${gemfirexd.product.dir}/lib">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+      <link href="http://java.sun.com/javase/6/docs/api/"
+            offline="true"
+            packagelistLoc="${javadocs.api.dir}"/>
+      <package name="com/pivotal/gemfirexd/auth/callback"/>
+      <package name="com/pivotal/gemfirexd/callbacks"/>
+      <package name="com/pivotal/gemfirexd/jdbc"/>
+      <package name="com/pivotal/gemfirexd/load"/>
+      <package name="com/pivotal/gemfirexd/procedure"/>
+      <package name="com/pivotal/gemfirexd/tools/sizer"/>
+      <package name="com/pivotal/gemfirexd/hadoop"/>
+      <package name="com/pivotal/gemfirexd/hadoop/mapred"/>
+      <package name="com/pivotal/gemfirexd/hadoop/mapreduce"/>
+      <package name="com/pivotal/gemfirexd"/>
+      <doctitle>&lt;h1&gt;GemFire XD ${gemfirexd.version} Java API&lt;/h1&gt;</doctitle>
+      <header>&lt;i&gt;GemFire XD ${gemfirexd.version}&lt;/i&gt;</header>
+      <bottom>&lt;i&gt;Copyright &amp;copy; 2010-2015 Pivotal Software, Inc. All rights reserved.&lt;/i&gt;</bottom>
+    </javadoc>
+    <!-- Copy files referenced by javadocs -->
+    <copy todir="${gemfirexd.docs.dir}">
+      <fileset dir="${src.dir}">
+        <include name="com/gemstone/gemfire/**/*.gif"/>
+        <exclude name="com/gemstone/gemfire/**/internal/**"/>
+        <include name="com/pivotal/gemfirexd/*.gif"/>
+      </fileset>
+    </copy>
+    
+    <!-- Java Security Fix, CVE-2013-1571 / Vulnerability Note VU#225657. -->
+    <!-- More information found here http://www.kb.cert.org/vuls/id/225657 -->
+    <java jvm="${javac.secondary}/bin/java" classname="JavadocFixTool" fork="yes">
+      <arg line="-R ${gemfirexd.docs.japi.dir}"/>
+      <classpath>
+        <pathelement location="${javadoc-updater-tool.jar}"/>
+      </classpath>
+    </java>
+  
+  </target>
+</project>

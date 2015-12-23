@@ -1,0 +1,48 @@
+#! /bin/bash
+# -------------------------
+# Build a glimpse index on the checkout
+#
+# See jgrep for how to use the resulting index.
+#
+# Usage:
+# 1.  cd to the top directory of your checkout.
+# 2.  bash bin/eclipse/makeglimpse
+# -------------------------
+
+set -e
+glimpsedir=$PWD/.glimpse
+rm -rf $glimpsedir
+mkdir $glimpsedir
+cat >$glimpsedir/.glimpse_exclude <<END
+*\o
+*\class
+eclipse_bin/*
+.metadata/*
+.svn/*
+END
+
+files="
+bin
+build2.sh
+build2.xml
+build-artifacts
+buildfiles
+buildlib
+buildlinux.properties
+build.sh
+buildwin.log
+buildwin.properties
+build.xml
+cleanjre.sh
+docs
+examples
+filehdr.txt
+gemfire
+gfgrep
+makefiles
+release
+sdk
+src
+tests
+"
+glimpseindex -H .glimpse $files

@@ -1,0 +1,46 @@
+
+                   Third-Party Software and GemFireXD 
+
+GemFireXD uses a number of third-party open-source software package.  We
+change the package names of the third-party classes in order to ensure
+that the version of the third-party software does not conflict with a
+version of that software that may be used by a customer.  For instance,
+we have renamed org.w3c to com.gemstone.org.w3c.  We use magical UNIX 
+commands like the following to change the package names:
+
+$ find src/third-party -name "*.java" | xargs perl -pi -e \
+  "s/org\.w3c/com\.gemstone\.org\.w3c/g"
+
+and:
+
+$ find src/third-party -name "*.java" | xargs perl -pi -e \
+  "s+org/w3c+com/gemstone/org/w3c+g"
+
+----------------------------------------------------------------------------
+     List of Third-Party Source Code and Jarfiles used in GemFireXD 
+----------------------------------------------------------------------------
+
+All open source declarations made for GemFire also pertain to GemFireXD because
+it is built upon GemFire's infastructure.
+
+OPEN SOURCE IN GEMFIREXD 1.0
+
+1. Apache Derby Project:  GemFireXD is an extension of the Derby Framework.
+	License:  "Apache style" license
+	Distributor URL: http://www.apache.org/licenses/LICENSE-2.0
+	REQUIRED COPYRIGHT: Apache Derby Copyright 2004-2008 The Apache Software Foundation 
+
+2. Jline: Java library for handling console input for ij. 
+	License:  BSD License
+	Distributor URL: http://www.opensource.org/licenses/bsd-license.php
+	REQUIRED COPYRIGHT: Copyright (c) 1998, Regents of the University of California All rights reserved.
+
+3. JNA: Java Native Access library for invoking some native process related API
+	License: GNU LGPL 2.1
+	Distributor URL: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+	REQUIRED COPYRIGHT: Copyright (c) 2007 Timothy Wall, All Rights Reserved.
+
+Banner copyright:
+This software product, its documentation, and its user interface Copyright (c) 1997-2010, GemStone Systems, Inc. All Rights Reserved by GemStone Systems Inc.  
+
+Free Software Foundation, Inc. <http://fsf.org/> JavaGroups Copyright 1999-2004 Free Software Foundation, Inc.  All rights reserved GNU Trove copyright 2001-2004 Eric D. Friedman. The PrimeFinder and HashFunctions classes in Trove are copyright 1999 CERN - European Organization for Nuclear Research. Copyright (c) 1991, 1999 Free Software Foundation, Inc. 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA  Copyright (c) 2001-2004 by the MX4J contributors.  All rights reserved.  Copyright (c) 2000  Cees de Groot. All Rights Reserved.  Contributions are Copyright (c) 2000 by their associated contributors.  Copyright (c) 2005, Terence Parr.  All rights reserved.  Copyright (c) 2004 Commons Modeler. All rights reserved. Apache Derby Copyright 2004-2008 The Apache Software Foundation.  Copyright (c) 1998, Regents of the University of California All rights reserved.

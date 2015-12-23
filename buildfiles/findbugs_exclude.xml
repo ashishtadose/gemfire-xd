@@ -1,0 +1,41 @@
+<!-- This file defines the matches that findbugs should exclude and ignore -->
+<!-- This file should supercede the file in src/findbugs.xml -->
+<FindBugsFilter>
+
+  <!-- Allow DelegatingClassLoader.Builder to create ClassLoader outside of doPrivileged -->
+  <Match>
+    <Class name="com.gemstone.gemfire.internal.DelegatingClassLoader$Builder" />
+    <Method name="build" />
+    <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED" />
+  </Match>
+
+  <Match>
+    <Bug category="I18N,MALICIOUS_CODE" />
+  </Match>
+
+  <Match>
+    <Bug pattern="DLS_DEAD_LOCAL_STORE" />
+  </Match>
+  <Match>
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+  </Match>
+  <!-- Ignore "is transient but isn't set by deserialization  -->
+   <Match>
+     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" /> 
+   </Match>
+  <!-- Ignore "consider declaring a serialVersionUID -->
+   <Match>
+     <Bug pattern="SE_NO_SERIALVERSIONID" /> 
+   </Match>
+  <!-- Ignore third party packages which are included in product jars -->
+     <Match>
+       <Package name="~com\.google\..*" />
+     </Match>
+     <Match>
+       <Package name="~org\.apache\.thrift\..*" />
+     </Match>
+     <Match>
+       <Package name="~com\.pivotal\.org\.apache\.hadoop\.hbase\..*" />
+     </Match>
+
+</FindBugsFilter>

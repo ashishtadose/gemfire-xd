@@ -1,0 +1,15 @@
+#!/bin/ksh
+# Set GEMFIRE to the product toplevel directory
+GEMFIRE=`/usr/bin/dirname $0`
+OLDPWD=$PWD
+cd $GEMFIRE
+export GEMFIRE=`/usr/bin/dirname $PWD`
+cd $OLDPWD
+
+EXTRA_CLASSPATH=$GEMFIRE/lib/tests.jar:$GEMFIRE/lib/tests/results
+
+. $GEMFIRE/bin/.setconfig.sh
+
+# export GEMFIRE_DEBUG=1
+
+$GEMFIRE/tests/gfc/$@

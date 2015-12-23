@@ -1,0 +1,65 @@
+
+                   Third-Party Software and GemFire
+
+GemFire uses a number of third-party open-source software package.  We
+change the package names of the third-party classes in order to ensure
+that the version of the third-party software does not conflict with a
+version of that software that may be used by a customer.  For instance,
+we have renamed org.w3c to com.gemstone.org.w3c.  We use magical UNIX
+commands like the following to change the package names:
+
+$ find src/third-party -name "*.java" | xargs perl -pi -e \
+  "s/org\.w3c/com\.gemstone\.org\.w3c/g"
+
+and:
+
+$ find src/third-party -name "*.java" | xargs perl -pi -e \
+  "s+org/w3c+com/gemstone/org/w3c+g"
+
+----------------------------------------------------------------------------
+     List of Third-Party Source Code and Jarfiles used in GemFire
+----------------------------------------------------------------------------
+    
+GEMSTONE SYSTEMS, INC. CONFIDENTIAL
+
+OPEN SOURCE IN GEMFIRE
+
+1.  Jgroups (JavaGroups): Distributed GemFire uses JavaGroups to perform multicast networking between machines.
+	License:  LGPL v2.1 updated with v3 June 2007
+                  http://www.opensource.org/licenses/lgpl-license.php
+	Distributor URL:  http://www.javagroups.com
+	REQUIRED COPYRIGHT: JavaGroups copyright 1999-2004 Free Software Foundation, Inc.  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+
+2.  Trove collection utilities:  Used to provide direct shared versions of the standard JDK collection classes 
+	License:  LGPL
+	Distributor URL:  http://sourceforge.net/projects/trove4j
+	REQUIRED COPYRIGHT: GNU Trove copyright 2001-2004 Eric D. Friedman. The PrimeFinder and HashFunctions classes in Trove are copyright 1999 CERN - European Organization for Nuclear Research. Copyright © 1991, 1999 Free Software Foundation, Inc. 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	
+3.  MX4J 2.0.1:  Open Source implementation of Java? Management Extensions (JMX) and of the JMX Remote API (JSR 160)  
+	License: "Apache style" license
+                 http://mx4j.sourceforge.net/docs/ch01s06.html
+	Distributor URL:  http://mx4j.sourceforge.net
+	REQUIRED COPYRIGHT: Copyright (c) 2001-2004 by the MX4J contributors.  All rights reserved. 
+
+5.  ANTLR parser:  Provides a framework for constructing recognizers, compilers, and translators from grammatical descriptions containing Java, C#, C++, or Python actions.
+	License:  BSD License
+                  http://www.antlr.org/license.html
+	Distributor URL:  http://www.antlr.org/
+	REQUIRED COPYRIGHT:  Copyright (c) 2005, Terence Parr.  All rights reserved.
+
+6. JAVA 5.0 BACKPORT:  This package is the backport of java.util.concurrent API, introduced in Java 5.0. The backport is based on public-domain sources from the JSR 166 CVS repository, the dll.util.concurrent package, and the Doug Lea's collections package. GemFire is using it in conjunction with the oswego concurrent utility classes.
+	License: Public Domain Certification
+	Distributor URL: http://backport-jsr166.sourceforge.net/index.php
+	No copyright is required.
+
+7. JAKARTA COMMONS MODELER PROJECT Jakarta Commons Modeler v2.0:  This is used by GemFire's JMX admin code.
+	License:  "Apache style" license
+	Distributor URL: http://www.apache.org/licenses/LICENSE-2.0
+	REQUIRED COPYRIGHT: Copyright © 2004 Commons Modeler. All rights reserved.
+
+8. 	GUAVA-LIBRARIES: Release 08 Google's core libraries for their Java-based projects: collections, caching, primitives support, concurrency libraries, common annotations, basic string processing, I/O, etc. 
+	License:  "Apache style" license
+	Distributor URL: http://guava-libraries.googlecode.com
+	REQUIRED COPYRIGHT: 
+
+

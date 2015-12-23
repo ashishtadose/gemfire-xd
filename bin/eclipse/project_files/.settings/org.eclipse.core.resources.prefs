@@ -1,0 +1,5 @@
+eclipse.preferences.version=1
+encoding//tests/com/gemstone/gemfire/cache/query/QueryTest.java=UTF-8
+encoding//tests/com/gemstone/gemfire/cache/query/data/Portfolio.java=UTF-8
+encoding//tests/com/gemstone/gemfire/cache/query/data/PortfolioPdx.java=UTF-8
+encoding//tests/objects/PdxPortfolio.java=UTF-8

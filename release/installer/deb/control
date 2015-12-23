@@ -1,0 +1,13 @@
+Source: pivotal-gemfirexd
+Section: alien
+Priority: extra
+Maintainer: Pivotal <info@pivotal.io>
+
+Package: pivotal-gemfirexd
+Architecture: all
+Depends: ${shlibs:Depends}
+Description: Pivotal GemFire XD
+ Pivotal GemFire XD is memory-optimized data management software delivering
+ application data at runtime with horizontal scale and lightning-fast
+ performance while providing developers with the well-known SQL interface and
+ tools.

@@ -1,0 +1,185 @@
+<project name="macro-stub">
+
+<!-- All targets in this file follow the convention that targets starting with "remote-" utilize ssh to run ant tasks remotely on another host. In order to preserve the output from these tasks they have an id attribute which is used to create an ant property with a unique name. So everytime you create a new ssh macro, give it a unique id.
+-->
+
+<target name="-define-win-ssh" depends="props">
+  <macrodef name="ssh-ant">
+    <attribute name="remote.host" default="${host.name}"/>
+    <attribute name="remote.ant.args" default=""/>
+    <attribute name="remote.ant.task" default="usage"/>
+    <attribute name="remote.timeout" default="0"/>
+    <attribute name="id"/>
+    
+    <sequential>
+      <taskdef name="SSHExec"
+               classname="org.apache.tools.ant.taskdefs.optional.ssh.SSHExec"/>
+      <tempfile property="@{id}" destDir="${win.basedir}" prefix="__@{remote.host}-" suffix=".log" />
+      <trycatch>
+      <try>
+        <SSHExec host="@{remote.host}"
+          username="${user.name}"
+          keyfile="${user.home}/.ssh/id_dsa"
+          timeout="@{remote.timeout}"
+          command=". ./gfxd10.sh;
+          cd ${win.basedir}; 
+          ./build.sh @{remote.ant.args} @{remote.ant.task} -DskipLastUpdate=true"/>
+      </try>
+      </trycatch>
+    </sequential>
+  </macrodef>
+</target>
+
+<target name="-define-ssh" depends="props">
+  <macrodef name="ssh-ant">
+    <attribute name="remote.host" default="${host.name}"/>
+    <attribute name="remote.ant.args" default=""/>
+    <attribute name="remote.ant.task" default="usage"/>
+    <attribute name="remote.timeout" default="0"/>
+    <attribute name="id"/>
+    
+    <sequential>
+      <taskdef name="SSHExec"
+               classname="org.apache.tools.ant.taskdefs.optional.ssh.SSHExec"/>
+      <tempfile property="@{id}" destDir="${basedir}" prefix="__@{remote.host}-" suffix=".log" />
+      <trycatch>
+      <try>
+        <SSHExec host="@{remote.host}"
+          username="${user.name}"
+          keyfile="${user.home}/.ssh/id_dsa"
+          timeout="@{remote.timeout}"
+          command="cd ${basedir};
+              ./build.sh @{remote.ant.args} @{remote.ant.task} >&amp;${@{id}}"/>
+      </try>
+      <finally>
+      <echo message="==============================================" level="info"/>
+      <echo message="Log contents from remote host @{remote.host}" level="info"/>
+      <echo message="==============================================" level="info"/>
+      <concat append="true" destfile="${@{id}}">
+========================================
+End of log from remote host @{remote.host} 
+========================================
+      </concat>
+        <!--<symlink link="${@{id}}." resource="${@{id}}" overwrite="true"/>-->
+        <touch file="${@{id}}"/>
+        <concat> <fileset file="${@{id}}"/> </concat>
+        <delete> <fileset file="${@{id}}"/> </delete>
+      </finally>
+      </trycatch>
+    </sequential>
+  </macrodef>
+</target>
+
+<target name="remote-run-dunit-tests" depends="props, -define-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${host.name}" remote.ant.args="-Donly32=true" remote.ant.task="run-dunit-tests" id="57824378"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-Donly64=true" remote.ant.task="run-dunit-tests64" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-precheckin" depends="update-git, clean, build-all, -define-ssh">
+  <description>Run dunits on local host, smoke-tests, quickstart and junit on ${remote.test.host} (if not set, defaults to the local host also)</description>
+  <property name="remote.test.host" value="${host.name}"/>
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${host.name}" remote.ant.args="-Donly32=true -DdunitSites=${dunitSites}" remote.ant.task="run-dunit-tests" id="56735778"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-Donly32=true" remote.ant.task="run-java-tests" id="432682320"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-Donly32=true" remote.ant.task="run-quickstart-tests" id="437378"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-Donly32=true" remote.ant.task="run-smoke-tests" id="437373"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-run-all-unit-tests" depends="props, -define-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${host.name}" remote.ant.args="-DskipLastUpdate=true -Donly32=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="run-all-gf-unit-tests32" id="57824378"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-DskipLastUpdate=true -Donly64=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="run-all-gf-unit-tests64" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-run-all-gemfirexd-unit-tests" depends="props, -define-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${host.name}" remote.ant.args="-DskipLastUpdate=true -Donly32=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="run-all-gemfirexd-tests32" id="57824378"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-DskipLastUpdate=true -Donly64=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="run-all-gemfirexd-tests64" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-gfxd-run-all-unit-tests" depends="props, -define-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${host.name}" remote.ant.args="-Donly32=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="gfxd-run-all-tests" id="57824378"/>
+    </sequential>
+    <sequential>
+      <ssh-ant remote.host="${remote.test.host}" remote.ant.args="-Donly64=true -Dtests.results.dir=${tests.results.dir}" remote.ant.task="gfxd-run-all-tests64" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<!-- The remote build-adonet target expects both remote.adonet.host and 
+     win.basedir and win.osbuild.dir (using windows path) properties in order 
+     to work. Additionally the remote host's home need to have a gfeSetup.sh 
+     to set up mapped drives to _unused_ drive letters. -->
+
+<target name="remote-gfxd-build-adonet" depends="props, -define-win-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${remote.adonet.host}" remote.ant.args="-Dosbuild.dir=${win.osbuild.dir}" remote.ant.task="gfxd-build-adonet-only" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-gfxd-run-adonet-tests-only" depends="props, -define-win-ssh">
+  <parallel>
+    <sequential>
+      <ssh-ant remote.host="${remote.adonet.host}" remote.ant.args="-Dosbuild.dir=${win.osbuild.dir}" remote.ant.task="gfxd-run-adonet-tests-only" id="423420"/>
+    </sequential>
+  </parallel>
+</target>
+
+<target name="remote-shared-lib" depends="props, -define-ssh">
+      <ssh-ant remote.host="${remote.build.host}" remote.ant.args="-Ddo32bit=1 -Ddo64bit=1" remote.ant.task="rebuild-shared-library" id="42323"/>
+</target>
+<target name="remote-test-shared-lib" depends="props, -define-ssh">
+      <ssh-ant remote.host="${remote.build.host}" remote.ant.args="-Ddo32bit=1 -Ddo64bit=1" remote.ant.task="rebuild-test-shared-library" id="782343"/>
+</target>
+
+<target name="remote-gfxd-build-rpms" depends="props, -define-ssh">
+      <ssh-ant remote.host="${remote.rpm.host}" remote.ant.args="-DskipLastUpdate=true -Donly32=true" remote.ant.task="gfxd-build-rpms" id="7825437_rpm"/>
+</target>
+
+<target name="remote-build-mac-odbc" depends="props, -define-ssh">
+      <ssh-ant remote.host="${remote.mac.host}" remote.ant.args="-DskipLastUpdate=true -Dgfxd.build.odbc=true" remote.ant.task="gfxd-build-all-odbc-installers" id="787683_odbc"/>
+</target>
+
+<target name="remote-gfxd-build-deb" depends="props, -define-ssh">
+      <ssh-ant remote.host="${remote.deb.host}" remote.ant.args="-DskipLastUpdate=true -Donly32=true" remote.ant.task="gfxd-build-deb-dist" id="7823438_deb"/>
+</target>
+
+<target name="remote-build-pulse" depends="props, -define-ssh">
+  <ssh-ant remote.host="${remote.pulse.host}" remote.ant.task="build-pulse" id="7883497"/>
+</target>
+
+<target name="remote-update-git" depends="props, -define-ssh">
+  <ssh-ant remote.host="${remote.git.host}" remote.ant.task="update-git" id="7125937"/>
+</target>
+
+</project>
+

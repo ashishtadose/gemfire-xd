@@ -1,0 +1,224 @@
+<cruisecontrol>
+  <property environment="env" toupper="true"/>
+
+  <project name="@PROJECT_NAME@" buildafterfailed="false">
+    <!-- to loop tests add to project requireModification="false" -->
+    <listeners>
+      <currentbuildstatuslistener
+          file="logs/@PROJECT_NAME@/status.txt"/>
+    </listeners>
+
+    <!-- Bootstrappers are run every time the build runs,
+        *before* the modification checks -->
+    <bootstrappers>
+      <!--svnbootstrapper localWorkingCopy="checkout/@PROJECT_NAME@"/-->
+      <!-- currentbuildstatusbootstrapper file="logs/@PROJECT_NAME@/buildstatus.txt"/-->
+      <antbootstrapper antscript="@BUILD_SCRIPT@"
+            antWorkingDir="checkout/@PROJECT_NAME@"
+            buildfile="build.xml"
+            target="update-svn"
+            uselogger="true"
+            usedebug="false"/>
+      
+    </bootstrappers>
+
+    <!-- Defines where cruise looks for changes, to decide
+         whether to run the build -->
+    <modificationset quietperiod="0">
+      <svn localworkingcopy="checkout/@PROJECT_NAME@"/>
+    </modificationset>
+
+    <!-- Configures the actual build loop, how often and which build file/target -->
+    <!-- every half hour is 1800 -->
+    <!-- every 15 min is 900 -->
+    <!-- switch target=name to cruisecontrol-build-and-bt-test for bt run -->
+    <!-- switch target=name to cruisecontrol-build-and-test-gemfirexd64 for 64bit unit test 
+    target="cruisecontrol-build-and-bt-test"-->
+    <schedule interval="60">
+      <ant antscript="@BUILD_SCRIPT@"
+            antWorkingDir="checkout/@PROJECT_NAME@"
+            buildfile="build.xml"
+            target="cruisecontrol-build-and-test-gemfirexd"
+            uselogger="true"
+            keepgoing="false"
+            usedebug="false"/>
+    </schedule>
+
+    <!-- directory to write build logs to -->
+    <log dir="logs/@PROJECT_NAME@">
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gfxd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gfxd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gfxd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gfxd-dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/wan-dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/java/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/java/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/java/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/java/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/junit/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/junit/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/junit/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/junit/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/junit/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/junit/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/junit/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/junit/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/junit/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/junit/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/junit/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/junit/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/junit/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/junit/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/junit/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/junit/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/junit/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/junit/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/junit/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/junit/site-5/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit-parallel/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit-parallel/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit-parallel/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit-parallel/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit-parallel/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit-parallel/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit-parallel/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit-parallel/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit-parallel/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit-parallel/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit-parallel/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit-parallel/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit-parallel/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit-parallel/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit-parallel/site-5/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit-parallel/site-1/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit-parallel/site-2/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit-parallel/site-3/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit-parallel/site-4/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit-parallel/site-5/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/quickstart/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/quickstart/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/quickstart/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/quickstart/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/container/felix/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/container/felix/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/container/felix/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/container/felix/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/container/virgo/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/container/virgo/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/container/virgo/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/container/virgo/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-junit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-junit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-junit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-junit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gfxd-smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gfxd-smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gfxd-smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gfxd-smoke/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/derby-harness-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/derby-harness-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/derby-harness-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/derby-harness-tests/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/derby-junit-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/derby-junit-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/derby-junit-tests/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/derby-junit-tests/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-wan-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-wan-dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/gemfirexd-integration-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/gemfirexd-integration-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/gemfirexd-integration-dunit/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/gemfirexd-integration-dunit/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/smoke/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/smoke/xml-reports"/>
+
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results/cruisecontrolbt/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results/cruisecontrolbt/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/linux/tests/results64/cruisecontrolbt/xml-reports"/>
+      <merge dir="checkout/@PROJECT_NAME@/build-artifacts/win/tests/results64/cruisecontrolbt/xml-reports"/>
+    </log>
+
+    <!--listeners>
+        <currentbuildstatuslistener file="logs/@PROJECT_NAME@/buildstatus.txt"/>
+    </listeners-->
+    
+    <!-- Publishers are run *after* a build completes -->
+
+    <publishers>
+
+      <!-- Only copy artifacts and ant build log if there's a failure -->
+      <onfailure>
+        <artifactspublisher
+          dir="checkout/@PROJECT_NAME@/build-artifacts"
+          dest="artifacts/@PROJECT_NAME@"
+          moveInsteadOfCopy="true" />
+        <artifactspublisher
+          file="checkout/@PROJECT_NAME@/antBuilderOutput.log"
+          dest="artifacts/@PROJECT_NAME@"/>
+      </onfailure>
+
+      <!-- Always send email, this could moved inside onfailure conditional -->
+      <htmlemail failasimportant="false"
+        mailhost="@SMTP_SERVER@"
+        returnaddress="cruisecontrol.donotreply@gemstone.com"
+        subjectprefix="CC:${env.CC_PLATFORM}:${env.CC_HOST_NAME}"
+        skipusers="true"
+        spamwhilebroken="true"
+        css="cruisecontrol/css/cruisecontrol.css"
+        xsldir="cruisecontrol/xsl"
+        logdir="logs/@PROJECT_NAME@">
+
+        <always address="@BUILDMASTER_EMAIL@"/>
+        <always address="@GROUP_EMAIL@"/>
+      </htmlemail>
+
+      <!-- Comment out blog publisher as hydradb is currently shutdown 
+      <weblog api="blogger"
+        blogurl="http://hydradb.gemstone.com/blog/xmlrpc"
+        blogid="@PROJECT_NAME@"
+        username="username"
+        password="password"
+        category="${env.CC_PLATFORM}-@PROJECT_NAME@"
+        reportsuccess="always"
+        subjectprefix="[${env.CC_PLATFORM}-${env.CC_HOST_NAME}]"
+        logdir="logs/@PROJECT_NAME@"
+        xslfile="cruisecontrol/xsl/blogresults.xsl"
+        css="cruisecontrol/css/cruisecontrol.css"/>
+-->
+
+    </publishers>
+
+  </project>
+  
+</cruisecontrol>

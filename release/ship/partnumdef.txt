@@ -1,0 +1,245 @@
+# $Id$
+------------------------------------------
+                        GemStone Systems, Inc.
+               Software Part Number Field Definitions
+                      for GemStone Facets Family
+                  with old historical baggage included 
+Field
+#1      Product Name                            Translation
+=====   ============                            ===========
+1       GemStone Object Server                  GemStone
+2       GemBuilder for Smalltalk                GemBuilder
+4       GemAccess for ODBC                      GemAccessODBC
+5       GemORB                                  GemORB
+6       GemStone/J Web Edition                  GemStoneJWebEdition
+7       GemStone/J Component Edition            GemStoneJComponentEdition
+8       GemStone/J Enterprise Edition           GemStoneJEnterpriseEdition
+9       GemStone/J Commerce Automation Edition  GemStoneJCommerceAutomationEdition
+10      GemStone GemFire                        GemFire
+12      GemStone/J Object Server                GemStoneJ
+14      GemStone/J Object Server with
+                           VisiBroker ORB       GemStoneJVisiBroker
+15      GemBuilder for Java                     GemBuilderJV
+17      GemBuilder for the Web                  GemBuilderWeb
+18      GemStone Facets                         GemStoneFacets
+20      GemBuilder for C                        GemBuilderC
+30      GemEnterprise (Lindsey)                 GemEnterprise
+40      GemStone DataBridge                     GemStoneDataBridge
+41      GemConnect (Laser)                      GemConnect
+50      GemBuilder for C++                      GemBuilderC++
+60      GemStone/J SSL Encryption, Domestic Only   GSJSSLEncryption
+61      GemStone/J SSL International Encryption GSJSSLInternationalEncryption
+62      RSA Encryption, Domestic Only           RSAEncryption
+63      RSA International Encryption            RSAInternationalEncryption
+64      JCE                                     JavaCryptographyExtension
+70      GSJ TCC Plug-in                         GSJTCCPlugin
+80      GeODE                                   GeODE
+85      GeODE X-Windows & Motif Libraries       GeODEXlibs
+87      GemStone/S Update			GSSUpdate
+88      GemStone/J Update			GSJUpdate
+89      GSJ Conversion Kit                      GSJConversionKit
+90      Demo                                    Demo
+91      GSJDemo                                 GSJDemo
+92      GemBuilder Demo                         GemBuilderDemo
+93      Guided Tour                             GuidedTour
+95      GBJ/GBW Demo                            GBJGBWDemo
+99      Beta Software                           BetaSoftware
+100     Conversion Kit                          GSConversionKit
+101     Object Server Source Code               GemStoneSrc
+102     GemBuilder for ST Source Code           GemBuilderSrc
+104     GemAccess for ODBC Source Code          GemAccessODBCSrc
+105     GemORB Source Code                      GemORBSrc
+106     GemStone/J Web Edition Source Code      GemStoneJWebEditionSrc
+107     GemStone/J Component Edition Source Code GemStoneJComponentEditionSrc
+108     GemStone/J Enterprise Edition Source Code GemStoneJEnterpriseEditionSrc
+109     GemStone/J Commerce Automation Edition
+             Source Code                        GemStoneJCommerceAutomationEditionSrc
+110     Brokat Advanced Server/J Source Code    BrokatAdvancedServer/J Source Code
+112     GemStone Java Object Server Source Code GemStoneJSrc
+114     GemStone Java Object Server with
+             VisiBroker ORB Source Code         GemStoneJVisiBrokerSrc
+115     GemBuilder for Java Source Code         GemBuilderJavaSrc
+117     GemBuilder for the Web Source Code      GemBuilderWebSrc
+118     GemStone Facets Source Code             GemStoneFacetsSrc
+120     GemBuilder for C Source Code            GemBuilderCSrc
+130     GemEnterprise Source code (Lindsey)     GemEnterpriseSrc
+140     GemStone DataBridge Source Code         GemStoneDataBridgeSrc
+141     GemConnect Source code (Laser)          GemConnectSrc
+150     GemBuilderC++ Source Code               GemBuilderC++Src
+160     GemStone/J SSL Encryption, Domestic
+                Only Source Code                GSJSSLEncryptionSrc
+161     GemStone/J SSL International Encryption
+                Source Code                     GSJSSLInternationalEncryptionSrc
+162     RSA Encryption, Domestic Only Source    RSAEncryptionSrc
+163     RSA International Encryption Source     RSAInternationalEncryptionSrc
+164     JCE Source Code                         JavaCryptographyExtensionSrc
+170     GSJ TCC Plug-in Source Code             GSJTCCPluginSrc
+180     GeODE Source Code                       GeODESrc
+185     GeODE X-Windows & Motif Libraries Src   GeODEXlibsSrc
+187     GemStone/S Update Src			GSSUpdateSrc
+188     GemStone/J Update Src			GSJUpdateSrc
+189     GSJ Conversion Kit Src                  GSJConversionKitSrc
+190     Demo Sources                            DemoSrc
+191     GSJDemo Sources                         GSJDemoSrc
+192     GemBuilder Demo Sources                 GemBuilderDemoSrc
+193     Guided Tour Sources                     GuidedTourSrc
+195     GBJ/GBW Demo Sources                    GBJGBWDemoSrc
+199     Beta Software Sources                   BetaSoftwareSrc
+200     Documentation Master Files              DocMaster
+201     GemStone/J Documentation files          GSJDocs
+202     GemStone/J Install Guide                InstallGuide
+203     GemStone/J Documentation files
+            (PDF version)                       GSJPDF
+204     JServer Documentation files             JSrvDocs
+205     GemStone Facets Install Guides          InstallGuides
+206     GemStone Facets Documentation files    
+            (PDF version)                       GSFPDF
+250     GemStone/J Documentation Master
+                special files                   DocMasterSpc
+251     GemStone/J Documentation files
+                special files                   GSJDocsSpc
+252     GemStone/J Install Guides
+                special files                   InstallGuidesSpc
+253     GemStone/J Documentation files
+            (PDF version) special files         GSJPDFSPC
+254     JServer Documentation special files     JSrvDocsSpc
+301     GemStone Object Server
+                Copyright Registration          GemStoneCopyright
+312     GemStone Java Server
+                Copyright Registration          GemStoneJCopyright
+314     GemStone Java Server with VisiBroker
+                Copyright Registration          GemStoneJCopyright
+400     Oracle Thin JDBC Driver                 OracleThinJDBCDriver
+402     DataDirect SequeLink                    SequeLinkJDBCDriver
+403     DataDirect SequeLink with Encryption    SequeLinkJDBCDriverEncryption
+404     Sybase jConnect JDBC Driver             SybasejConnectJDBCDriver
+406     DataDirect SequeLink for DB2/MVS        SequeLinkDB2MVSDriver
+408     Verve Component Workflow Engine         VerveWorkflow
+450     Oracle Thin JDBC Driver special files   OracleThinJDBCDriverSpc
+452     DataDirect SequeLink special files      SequeLinkJDBCDriverSpc
+453     DataDirect SequeLink with Encryption special files
+                                         SequeLinkJDBCDriverEncryptionSpc
+454     Sybase jConnectJDBC Driver
+                special files                   SybasejConnectJDBCDriverSpc
+456     DataDirect SequeLink for DB2/MVS
+                special files                   SequeLinkDB2MVSDriverSpc
+458     Verve Component Workflow Engine
+                special files                   VerveWorkflowSpc
+500     Source Code Manager Tool Kit            SourceCodeManagerToolKit
+510     Maintenance Framework for
+                  Smalltalk Tool Kit            GSMaintenanceToolKit
+520     Performance Profiler for
+                  Smalltalk Tool Kit            GSPerformanceProfiler
+530     Performance Profiler for
+                  GS/J Tool Kit                 GSJPerformanceProfiler
+541     GemConnect Tool Kit                     GemConnect
+550     DBA Assistant Tool Kit                  DBAassistant
+600     Source Code Manager Tool Kit Sources    SourceCodeManagerToolKitSrc
+610     Maintenance Framework for
+                  Smalltalk Tool Kit Sources    GSMaintenanceToolKitSrc
+620     Performance Profiler for
+                  Smalltalk Tool Kit Sources    GSPerformanceProfilerSrc
+630     Performance Profiler for
+                  GS/J Tool Kit Sources         GSJPerformanceProfilerSrc
+641     GemConnect Tool Kit Sources             GemConnectSrc
+650     DBA Assistant Tool Kit Sources          DBAassistantSrc
+700     Brokat Advanced Server ISO Image	BrokatAdvServ_isoimage
+701     Brokat Enterprise Server ISO Image	BrokatEntServ_isoimage
+
+Field
+#2      Host Type                               Translation
+=====   =========                               ===========
+1       DECstation                              MIPSEL.Ultrix
+3       SNI                                     MIPSEB.sinix
+4       SPARC/SunOS                             sparc.SunOS4
+5       NCR ATT/SVR4                            i386.ncr
+7       HP9000/Series 700 & 800                 hppa.hpux
+8       Sequent Symmetry/Dynix                  Symmetry.Dynix
+9       IBM RS6000/AIX                          RISC6000.AIX
+10      SPARC/Solaris                           sparc.Solaris
+11      Windows NT                              x86.Windows_NT
+12      Windows 95                              x86.Windows_95
+20      IBM PC/Windows                          x86.win31
+25      PC/Windows                              x86.win32s
+30      IBM OS/2                                x86.os2
+40      Macintosh                               mac
+41      Power Macintosh                         powermac
+100     All UNIX platforms                      all.unix
+110     All platforms (UNIX, Mac, PC)           all
+120     IBM OS/2 and PC/Windows                 os2.Windows
+125     PC/Windows and Windows NT               x86.NTWin32s
+126     Windows NT and Windows '95              x86.NTWindows_95
+130     All PC-based platforms                  all.pc
+140     All Windows platforms                   all.windows
+
+Field
+#3      Product Version No.                     Translation
+=====   ===================                     ===========
+5.1     5.1                                     5.1  
+
+
+Field
+#4      Third Party Vendor                      Translation
+=====   ==================                      ===========
+1       ParcPlace Objectworks\Smalltalk Rel 4.1 +owst4.1
+2       ParcPlace VisualWorks 2.0               +vw2.0
+3       ParcPlace VisualWorks 2.5               +vw2.5
+4       ParcPlace VisualWorks 2.5.1             +vw2.5.1
+5       ParcPlace VisualWorks 2.5.2             +vw2.5.2
+6       ParcPlace VisualWorks 2.5.x             +vw2.5.x
+7       ParcPlace VisualWorks 3.0               +vw3.0
+10      Digitalk Smalltalk/V v2.0               +stv2.0
+11      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v3.0         +vse3.0
+12      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v3.0.1       +vse3.0.1
+13      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v3.1         +vse3.1
+14      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v3.1.1       +vse3.1.1
+15      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v3.1.2       +vse3.1.2
+16      ParcPlace-Digitalk VisualSmalltalk
+                        Enterprise v4.0         +vse4.0
+20      IBM VisualAge v2.0                      +va2.0
+21      IBM VisualAge v3.0                      +va3.0
+22      IBM VisualAge v3.0a                     +va3.0a
+24      IBM VisualAge v4.0                      +va4.0
+50      VisualWorks 2.5, VisualSmalltalk v3.1
+        & VisualAge v3.0                        +vw25_vst3.1_va3.0
+51      All vendor Smalltalks                   +all_st
+60      TogetherSoft TCC 4.1                    +tcc4.1
+61      TogetherSoft TCC 4.2                    +tcc4.2
+70      ParcPlace-Digitalk VisualWave 1.0       +vwv1.0
+100     Microsoft C v7.0 (Win16)                +msc7.0
+110     Visual C (Win32)                        +visualc1.10
+111     MicroSoft Visual C++ v2.1               +visualc2.1
+140     IBM C Set/2 v2.1 (OS/2)                 +cset2.1
+141     IBM OS/2 VisualAge C/C++ v3.0           +vac3.0
+170     MPW C v3.3 (Mac)                        +mpwc3.3
+171     ETO 18 (Mac/PowerMac)                   +eto18
+172     Apple Macintosh Code Warrior 9.0        +cw9.0
+300     Sybase v10.0                            +sybase10.0
+310     Oracle 7.2.2                            +oracle7.2.2
+311     Oracle 8i                               +oracle8i
+
+
+Field   Guided Tour version or
+#5      Compatable GemStone Version No.         Translation
+=====   ===============================         ===========
+GT1.0   GT1.0                                   GT1.0
+4.0.0   4.0.0                                   4.0.0
+
+Field
+#6      Patch Level Version No.                 Translation
+=====   =======================                 ===========
+P001    P001                                    PatchLevel001
+
+
+
+
+Examples:
+
+1-7-5.0Beta1-0-0-0      becomes     GemStone5.0Beta1-hppa.hpux
+2-10-5.0Beta1-3-0-0     becomes     GemBuilder5.0Beta1+vw2.5-sparc.Solaris
+1-9-5.0-0-0-P001        becomes     GemStone5.0-RISC6000.AIX-PatchLevel001

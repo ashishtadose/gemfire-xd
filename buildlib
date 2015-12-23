@@ -1,0 +1,105 @@
+#!  /bin/bash
+
+# script to run the build target to interactively rebuild
+# a specific shared library and copy it to the 
+# product tree.
+# assumes your checkout is on Solaris and your
+# Linux build-artifacts is a symbolic link from the
+# Solaris checkout.
+
+if [ `uname` = "SunOS" ]; then
+  Plat=sol
+  dest=build-artifacts/${Plat}
+  myUsage="Usage:   $0 [clean] <fast|slow> <32|64>"
+else
+  if [ `uname` = "Linux" ]; then
+    Plat=linux
+    dest=./build-linux
+    myUsage="Usage:   $0 [clean] <fast|slow> "
+  else
+    # implementation not complete
+    Plat=windows
+    dest=junk
+    myUsage="Usage:   $0 [clean] <fast|slow> "
+  fi
+fi
+
+
+doClean="false"
+if [ "$1" = "clean" ]; then
+  shift 
+  echo "Removing objects"
+  doClean="true"
+else
+  echo "Not cleaning objects"
+fi
+ 
+if [ "$1" = "fast" ]; then
+  echo "building fast"
+  prefix=""
+  libSuffix=""
+else
+  if [ "$1" = "slow" ]; then
+    echo "building slow"
+    prefix="slow-"
+    libSuffix="_g"
+  else
+    echo "$myUsage"
+    exit 1
+  fi
+fi
+
+LibDir=$dest/hidden/lib
+ProdLib=$dest/product/lib
+if [ "$machine" == "10" ]; then
+  if [ "$2" == "64" ]; then 
+    echo "Building 64 bit"
+    target=${prefix}shared-lib64
+    libSize="64"
+  else
+    if [ "$2" = "32" ]; then 
+      echo "Building 32 bit"
+      target=${prefix}shared-lib32
+      libSize=""
+    else
+      echo $myUsage
+      exit 1
+    fi
+  fi
+else 
+  # Linux or Windows
+  echo "Building 32 bit"
+  target=${prefix}shared-lib32
+  libSize=""
+fi
+
+if [ "$doClean" == "true" ]; then
+  echo "removing objects  $dest/src/objects${libSize}${libSuffix}"
+  rm -rf $dest/src/objects${libSize}${libSuffix}
+fi
+
+export NO_BUILD_LOG=1
+LOG=layer.log${machine}
+
+echo "building target: $target"
+./build.sh $target | tee $LOG 2>&1
+
+if [ $? != 0 ]; then
+  echo "*** error from build"
+  less -i $LOG
+  exit 1
+fi
+
+chmod +w $LibDir $LibDir/libgemfire*
+chmod +w $ProdLib $ProdLib/libgemfire*
+touch $ProdLib/delaycoredump.txt
+
+if [ "$1" == "slow"  ]; then
+  cp $LibDir/libgemfire${libSize}_g.so $ProdLib/libgemfire${libSize}.so
+  echo "copied libgemfire${libSize}_g.so to $ProdLib "
+else
+  cp $LibDir/libgemfire${libSize}.so $ProdLib/libgemfire${libSize}.so
+  echo "copied libgemfire.so to $ProdLib "
+fi
+
+

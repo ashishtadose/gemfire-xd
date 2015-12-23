@@ -1,0 +1,83 @@
+#
+# Pivotal GemFire XD Configuration File
+# This will be sourced by the SysV init script /etc/init.d/gfxd
+
+SERVICE_NAME="Pivotal GemFire XD"
+GFXD_DIR=/usr/lib/gfxd
+GFXD=${GFXD_DIR}/bin/gfxd
+GFXD_DATA_DIR=/var/lib/gfxd
+GFXD_SERVER_DIR=${GFXD_DATA_DIR}/server
+GFXD_LOG_DIR=/var/log/gfxd
+GFXD_SERVER_LOG_DIR=${GFXD_LOG_DIR}/server
+GFXD_SERVER_LOG_FILE=gfxdserver.log
+GFXD_USER=gfxd
+GFXD_GROUP=gpadmin
+
+GFXD_ARGS=
+
+
+#-----------------------------------------------------------------------------
+# Type of Configuration
+#
+# Values are: no|local|remote|locator_only
+# no - default multicast configuration with a local server instance
+# local - start a local locator and a local server instance. Remote locators
+#   can be added to this configuration. 
+# remote - start a local server instance, but do not start a local locator.
+#   Remote locators will be used instead. 
+# locator_only - only start a local locator, do not start a server instance
+
+LOCATOR=no
+
+# configuration options:                            Value for LOCATOR:
+#1. local locator only                              - locator_only
+#2. multicast server only                           - no
+#3. local server, remote locator(s)                 - remote
+#4. local locator & server                          - local
+#5. local locator, local server, remote locator(s)  - local
+
+#-----------------------------------------------------------------------------
+# Configuration for multicast/no locator
+# Set the multicast port number. (default 10334)
+MCAST_PORT=10334
+
+# Set the multicast address. (default 239.192.81.1)
+MCAST_ADDRESS=239.192.81.1
+
+#-----------------------------------------------------------------------------
+# GemFireXD Server ports
+# These ports are use during both multicast and locator based configurations
+
+# IP address the server will bind to
+# This defaults to localhost for security, and needs to be changed to an
+# external IP address or host name
+CLIENT_BIND_ADDRESS=localhost
+
+# Port number the server will bind to
+# For a local locator configuration, the CLIENT_PORT_WITH_LOCATOR value is
+# used by the server, while the locator uses CLIENT_PORT
+CLIENT_PORT=1527
+CLIENT_PORT_WITH_LOCATOR=1529
+
+#-----------------------------------------------------------------------------
+# Configuration for a local locator
+LOCAL_LOCATOR_IP=`hostname -i`
+LOCAL_LOCATOR_PORT=10334
+GFXD_LOCATOR_DIR=${GFXD_DATA_DIR}/locator
+GFXD_LOCATOR_LOG_DIR=${GFXD_LOG_DIR}/locator
+GFXD_LOCATOR_LOG_FILE=gfxdlocator.log
+GFXD_LOCATOR_ARGS="-peer-discovery-address=${LOCAL_LOCATOR_IP} -peer-discovery-port=${LOCAL_LOCATOR_PORT}"
+# NOTE: Add this IP/port combination to the LOCATOR_IP_STRING 
+
+#-----------------------------------------------------------------------------
+# Configure the locator IP addresses and ports of local and/or remote locators
+# for the local server
+
+# Example single local locator
+# LOCATOR_IP_STRING=192.168.1.91[10334]
+
+# Example remote locators
+# LOCATOR_IP_STRING=192.168.10.91[10334],192.168.10.191[10334]
+
+# Format is host[port]
+LOCATOR_IP_STRING=`hostname -i`[10334]

@@ -1,0 +1,1 @@
+$GEMFIRE/jre/bin/java -cp $GEMFIRE/lib/antlr.jar:$GEMFIRE/lib/gemfire.jar com.gemstone.gemfire.cache.query.internal.parse.OQLParser $*

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="virgo-server">
+
+  <target name="-virgo-init"
+          description="Initialization logic for the Virgo Server targets."
+          depends="props"
+          unless="condition.virgo.inited">
+    <!-- container tests context configuration, meta-data and properties -->
+    <propertycopy name="container.install.dir" from="tests.container.dir" override="true" silent="true"/>
+    <property name="container.install.dir" location="${tests.out.dir}/container"/>
+    <propertycopy name="virgo.gemfirePropertyFile" from="container.tests.gemfirePropertyFile" override="true" silent="true"/>
+    <property name="virgo.gemfirePropertyFile" location="${tests.out.dir}/config/gemfire.properties"/>
+    <propertycopy name="virgo.gemfire.licensing.licensingClientLogVerbose" from="container.tests.gemfire.licensing.licensingClientLogVerbose" override="true" silent="true"/>
+    <property name="virgo.gemfire.licensing.licensingClientLogVerbose" value="false"/>
+
+    <!-- virgo kernel server v2.1.1 file system path configuration -->
+    <property name="virgo.211.installation.file" location="${virgo.server.dir}/virgo-kernel-2.1.1.RELEASE.zip"/>
+    <property name="virgo.211.home.dir" location="${container.install.dir}/virgo-kernel-2.1.1.RELEASE"/>
+    <property name="virgo.211.pickup.dir" location="${virgo.211.home.dir}/pickup"/>
+    <property name="virgo.211.ext.repo.dir" location="${virgo.211.home.dir}/repository/ext"/>
+    <property name="virgo.211.usr.repo.dir" location="${virgo.211.home.dir}/repository/usr"/>
+    <property name="virgo.211.java.policy.file" location="${virgo.211.home.dir}/config/java.policy"/>
+    <property name="virgo.211.log.file" location="${virgo.211.home.dir}/serviceability/logs/log.log"/>
+    <property name="virgo.211.setenv.shell.script.file" location="${virgo.211.home.dir}/bin/setenv"/>
+
+    <!-- virgo kernel server file system path configuration -->
+    <propertycopy name="virgo.installation.file" from="virgo.211.installation.file" override="true"/>
+    <propertycopy name="virgo.home.dir" from="virgo.211.home.dir" override="true"/>
+    <dirname file="${virgo.home.dir}" property="virgo.home.parent.dir"/>
+    <propertycopy name="virgo.pickup.dir" from="virgo.211.pickup.dir" override="true"/>
+    <propertycopy name="virgo.ext.repo.dir" from="virgo.211.ext.repo.dir" override="true"/>
+    <propertycopy name="virgo.usr.repo.dir" from="virgo.211.usr.repo.dir" override="true"/>
+    <propertycopy name="virgo.java.policy.file" from="virgo.211.java.policy.file" override="true"/>
+    <propertycopy name="virgo.log.file" from="virgo.211.log.file" override="true"/>
+    <propertycopy name="virgo.setenv.shell.script.file" from="virgo.211.setenv.shell.script.file" override="true"/>
+
+    <condition property="condition.virgo.installed" value="true">
+      <istrue value="${skip.virgo.tests}"/>
+    </condition>
+
+    <property name="condition.virgo.inited" value="true"/>
+  </target>
+
+  <target name="-create-java-policy-file"
+          description="Creates a Java policy file to be used by Virgo Server during runtime."
+          depends="-virgo-init">
+    <echo file="${virgo.java.policy.file}" append="false">
+grant {
+  permission java.security.AllPermission;
+};
+    </echo>
+  </target>
+
+  <target name="-create-setenv-shell-script"
+          description="Creates a shell script file to set the Virgo JAVA_OPTS environment variable with system properties."
+          depends="-virgo-init">
+    <property name="java.opts.system.properties" value="-Djava.security.policy=${virgo.java.policy.file} -DgemfirePropertyFile=${virgo.gemfirePropertyFile} -Dgemfire.licensing.licensingClientLogVerbose=${virgo.gemfire.licensing.licensingClientLogVerbose} -Dgemfire.container-tests.rmi-registry.port=${container.tests.rmi.registry.port}"/>
+    <if>
+      <os family="windows"/>
+      <then>
+        <echo file="${virgo.setenv.shell.script.file}.bat" append="false">
+rem Setting java.security.policy system property to reference the java.policy file
+set JAVA_OPTS=%JAVA_OPTS% ${java.opts.system.properties}
+        </echo>
+      </then>
+      <else>
+        <echo file="${virgo.setenv.shell.script.file}.sh" append="false">
+#!/bin/sh
+# Setting java.security.policy system property to reference the java.policy file
+export JAVA_OPTS="$JAVA_OPTS ${java.opts.system.properties}"
+        </echo>
+      </else>
+    </if>
+  </target>
+
+  <target name="-is-virgo-installed"
+          description="Determines whether a Virgo Server installation exists."
+          depends="-virgo-init"
+          unless="condition.virgo.installed">
+    <available file="${virgo.home.dir}" type="dir" property="condition.virgo.installed" value="true"/>
+  </target>
+
+  <target name="install-virgo"
+          description="This target locates the Virgo distributable and unpacks it to the container test results directory."
+          depends="-is-virgo-installed"
+          extensionOf="-run-container-setup"
+          unless="condition.virgo.installed">
+    <mkdir dir="${container.install.dir}"/>
+    <unzip src="${virgo.installation.file}" dest="${container.install.dir}" overwrite="true"/>
+    <runtarget target="-is-virgo-installed"/>
+    <fail unless="condition.virgo.installed" description="Failed to install Virgo Server!"/>
+    <runtarget target="virgo-server.-create-java-policy-file"/>
+    <runtarget target="virgo-server.-create-setenv-shell-script"/>
+    <runtarget target="virgo-server.deploy-gemfire"/>
+    <!--copy file="${com.springsource.javax.transaction-1.1.0.jar}" todir="${virgo.211.ext.dir}" overwrite="false"/-->
+    <chmod dir="${virgo.home.dir}" perm="755" maxparallel="5" includes="**/*"/>
+    <echo level="warn" message="Installed Virgo Kernel Server to (${virgo.home.dir})"/>
+  </target>
+
+  <target name="deploy-gemfire" description="Deploys the GemFire bundle to the Virgo Kernel Server."
+          depends="-virgo-init">
+    <if>
+      <or>
+        <not>
+          <available file="${virgo.usr.repo.dir}/${gemfire.jar.name}" type="file"/>
+        </not>
+        <not>
+          <uptodate targetfile="${virgo.usr.repo.dir}/${gemfire.jar.name}" srcfile="${product.lib.dir}/${gemfire.jar.name}"/>
+        </not>
+      </or>
+      <then>
+        <copy file="${product.lib.dir}/${antlr.jar.name}" todir="${virgo.usr.repo.dir}" overwrite="true"/>
+      	<copy file="${product.lib.dir}/${commons-io.jar.name}" todir="${virgo.usr.repo.dir}" overwrite="true"/> 
+      	<copy file="${product.lib.dir}/${gemfire.jar.name}" todir="${virgo.usr.repo.dir}" overwrite="true"/>
+      </then>
+    </if>
+  </target>
+
+  <target name="virgo-clean" description="Cleans up any working files or log files from a previous run of Virgo."
+          depends="-virgo-init"
+          unless="skip.virgo.tests">
+    <delete dir="${virgo.home.dir}/serviceability" includeemptydirs="true" failonerror="true"/>
+  </target>
+
+  <target name="reinstall-virgo" depends="uninstall-virgo, install-virgo"/>
+
+  <target name="start-virgo" description="Starts Virgo Kernel Server"
+          depends="deploy-gemfire, virgo-clean">
+    <condition property="virgo.startup.cmd" value="startup.bat" else="startup.sh">
+      <os family="windows"/>
+    </condition>
+
+    <echo level="debug">Using command (${virgo.startup.cmd}) to start Virgo Kernel Server.</echo>
+
+    <echo level="warn">Starting Virgo...</echo>
+    <exec executable="${virgo.home.dir}/bin/${virgo.startup.cmd}" dir="${virgo.home.dir}" spawn="true">
+      <arg value="-clean"/>
+    </exec>
+
+    <waitfor maxwait="30" maxwaitunit="second" timeoutproperty="virgo.startup.timeout">
+      <and>
+        <available file="${virgo.log.file}" type="file"/>
+        <resourcecontains resource="${virgo.log.file}" substring="Started hot deployer on 'pickup'." casesensitive="false"/>
+      </and>
+    </waitfor>
+
+    <echoIf property="virgo.startup.timeout" level="warn">Virgo has not started within the specified timeout (30 seconds)!</echoIf>
+  </target>
+
+  <target name="stop-virgo" description="stops virgo kernel server" depends="-virgo-init">
+    <condition property="virgo.shutdown.cmd" value="shutdown.bat" else="shutdown.sh">
+      <os family="windows"/>
+    </condition>
+
+    <echo level="debug">using command (${virgo.shutdown.cmd}) to shutdown virgo kernel server.</echo>
+
+    <echo level="warn">stopping virgo...</echo>
+    <exec executable="${virgo.home.dir}/bin/${virgo.shutdown.cmd}" dir="${virgo.home.dir}">
+      <redirector output="${virgo.home.dir}/virgo-shutdown-cmd.out" createemptyfiles="true"/>
+    </exec>
+
+    <waitfor maxwait="10" maxwaitunit="second" timeoutproperty="virgo.shutdown.timeout">
+      <and>
+        <available file="${virgo.log.file}" type="file"/>
+        <resourcecontains resource="${virgo.log.file}" substring="shutdown initiated." casesensitive="false"/>
+      </and>
+    </waitfor>
+
+    <echoIf property="virgo.shutdown.timeout" level="warn">virgo has not shutdown within the specified timeout (10 seconds)!</echoIf>
+    <conditionalProperty name="condition.virgo.stopped" value="true" unless="virgo.shutdown.timeout"/>
+  </target>
+
+  <target name="force-stop-virgo" description="Kills the Virgo Kernel Server process."
+          depends="-virgo-init"
+          unless="condition.virgo.stopped">
+    <if>
+      <os family="unix"/>
+      <then>
+        <echo level="warn">Killing the Virgo Kernel Server process...</echo>
+        <shellscript shell="bash">
+          kill -9 `ps aux | grep "felix" | grep -v "grep felix" | awk '{print $2}'`
+        </shellscript>
+      </then>
+    </if>
+  </target>
+
+  <target name="uninstall-virgo"
+          description="This target uninstalls the Virgo Server installation from localhost."
+          depends="-virgo-init"
+          extensionOf="run-container-tests-clean">
+    <delete dir="${virgo.home.dir}" verbose="true" includeemptydirs="true" failonerror="false"/>
+  </target>
+
+</project>

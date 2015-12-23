@@ -1,0 +1,573 @@
+1. Set Editor Preferences
+
+1.1. Make sure that tabs are set to display at a width of 8 chars.
+
+1.2 Make sure that print margins are displayed and set at 80 characters.
+
+1.3 Make sure that tabs are inserted as spaces.
+
+2. Set up your Java "clean up" code style
+  Add "this" qualifier to unqualified field accesses
+  Change non static accesses to static members using declaring type
+  Change indirect accesses to static members to direct accesses (accesses
+    through subtypes)
+  Convert control statement bodies to block
+  Add final modifier to private  fields
+  Add final modifier to method parameters
+  Add final modifier to local variables
+  Remove unnecessary parentheses
+  Remove unused imports
+  Remove unused local variables
+  Add missing "@Override" annotations
+  Add missing "@Deprecated" annotations
+  Remove unnecessary casts
+  Remove unnecessary "$NON-NLS$" tags.
+  Organize imports.
+  Remove trailing whitespaces on all lines.
+
+3. Set up your Java formatter rules.
+
+3.1 Indentation
+  Tab policy is "spaces only".
+  Tab width is "2".
+  Tab size is "8".
+  Align fields in columns.
+  (Indent) Declarations within class body.
+  (Indent) Declarations within enum declaration.
+  (Indent) Declarations within enum constants.
+  (Indent) Declarations within annotation declaration.
+  (Indent) Statements within method/constructor body
+  (Indent) Statements within blocks
+  DO NOT (Indent) Statements within "switch" body
+  (Indent) Statements within "case" body
+  (Indent) "break" statements
+  DO NOT (Indent) Empty Lines
+
+3.2 Braces
+  Set *all* brace positions to "Same Line"
+
+3.3 White Space
+
+3.3.1 Classes
+  before opening brace of a class
+  before opening brace of an anonymous class
+  NOT before comma in implements clause
+  after comma in implements clause
+
+3.3.2 Fields
+  NOT before comma in multiple field declarations
+  after comma in multiple field declarations
+
+3.3.3 Local variables
+  NOT before comma
+  after comma
+
+3.3.4 Constructors
+  NOT before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+  NOT between empty parenthesis
+  before opening brace
+  NOT before comma in parameters
+  after comma
+  NOT before comma in "throws" clause
+  after comma in "throws" clause
+
+3.3.5 Methods
+  NOT before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+  NOT between empty parnetheses
+  before opening brace
+  NOT before comma in parameters
+  after comma in parameters
+  NOT before ellipsis in vararg parameters
+  after ellipsis in vararg parameters
+  NOT before comma in "throws" clause
+  after comma in throws clause
+
+3.3.6 Labels
+  NOT before colon
+  after colon
+
+3.3.7 Annotations
+  NOT after @
+  NOT before opening parenthesis
+  NOT after opening parenthesis
+  NOT before comma
+  after comma
+  NOT before closing parenthesis
+
+3.3.8 Enum types
+  before opening brace in declaration
+  NOT before comma between constants
+  after comma between constants
+  NOT before opening parenthesis in constant arguments
+  NOT after opening parenthesis in constant arguments
+  NOT between empty parentheses in constant arguments
+  NOT before comma in constant arguments
+  after comma in constant arguments
+  NOT before closing parenthesis in constant arguments
+  before opening brace of constant body.
+
+3.3.9 Annotation types
+  before @
+  NOT after @
+  before opening brace
+  NOT before opening parenthesis in annotation type members
+  NOT between parenthesis in annotation type members
+
+3.3.10 Control Statements
+  NOT before semicolon
+
+3.3.10.1 Blocks
+  before opening brace
+  after closing brace
+
+3.3.10.2 "if else"
+  before opening parenthesis
+  NOT after opening parenthesis
+  NOT after closing parenthesis
+
+3.3.10.3 "for"
+  before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+  NOT before comma in initialization
+  after comma in initialization
+  NOT before semicolon
+  after semicolon
+  NOT before colon
+  after colon
+
+3.3.10.4 "switch"
+  NOT before colon in case
+  NOT before colon in default
+  before opening brace
+  before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+
+3.3.10.5 "while" & "do while"
+  before opening parenthesis
+  NOT after closing parenthesis
+  NOT before closing parenthesis
+
+3.3.10.6 "synchronized"
+  before opening parenthesis
+  NOT after closing parenthesis
+  NOT before closing parenthesis
+
+3.3.10.7 "catch"
+  before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+
+3.3.10.8 "assert"
+  NOT before colon
+  after colon
+
+3.3.10.9 "return"
+  before parenthesized expressions
+
+3.3.10..10 "throw"
+  before parenthesized expressions
+
+3.3.11 Expressions
+
+3.3.11.1 Function invocations
+  NOT before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+  NOT between empty parentheses
+  NOT before comma in method arguments
+  after comma in method arguments
+  NOT before comma in object allocation arguments
+  after comma in object allocation arguments
+  NOT before comma in explicit constructor call
+  after comma in explicit constructor call
+
+3.3.11.2 Assignments
+  before assignment operator
+  after assignment operator
+
+3.3.11.3 Operators
+  before binary operators
+  after binary operators
+  NOT before unary operators
+  NOT after unary operators
+  NOT before prefix operators
+  NOT after prefix operators
+  NOT before postfix operators
+  NOT after postfix operators
+
+3.3.11.4 Parenthesized expressions
+  NOT before opening parenthesis
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+
+3.3.11.5 Type casts
+  NOT after opening parenthesis
+  NOT before closing parenthesis
+  NOT after closing parenthesis
+
+3.3.11.6 Conditionals
+  before question mark
+  after question mark
+  before colon
+  after colon
+
+3.3.12 Arrays
+
+3.3.12.1 Array Declarations
+  NOT before opening bracket
+  NOT between empty brackets
+
+3.3.12.2 Array allocation
+  NOT before opening bracket
+  NOT after opening bracket
+  NOT before closing bracket
+  NOT between empty brackets
+
+3.3.12.3 Array initializers
+  before opening brace
+  after closing brace
+  before closing brace
+  NOT before comma
+  after comma
+  NOT between empty braces
+
+3.3.12.4 Array element access
+  NOT before opening bracket
+  NOT after opening bracket
+  NOT before closing bracket
+
+3.3.13 Parameterized Types
+
+3.3.13.1 Type reference
+  NOT before opening angle bracket
+  NOT after opening angle bracket
+  NOT before comma
+  after comma
+  NOT before closing angle bracket
+
+3.3.13.2 Type arguments
+  NOT before opening angle bracket
+  NOT after opening angle bracket
+  NOT before comma
+  after comma
+  NOT before closing angle bracket
+  NOT after closing angle bracket
+
+3.3.13.3 Type parameters
+  NOT before opening angle bracket
+  NOT after opening angle bracket
+  NOT before comma in parameters
+  after comma in parameters
+  NOT before closing angle bracket
+  NOT after closing angle bracket
+  before "&" in type bounds
+  after "&" in type bounds
+
+3.3.13.4 Wildcard type
+  NOT before question mark
+  NOT after question mark
+
+3.4 Blank lines
+  Blank lines in complation unit:
+    before package declaration: 0
+    after package declaration: 1
+    before import declaration: 1
+    between import groups: 1
+    after import declaration: 1
+    between class declarations: 1
+  Blank lines within class declarations:
+    Before first declaration: 0
+    before declarations of the same kind: 1
+    before member class declarations: 1
+    before field declarations: 1
+    before method declarations: 1
+    at beginning of method body: 0
+  Existing blank lines:
+    Number of empty lines to preserve: 1
+
+3.5 New Lines
+  Insert new line:
+    in empty class body
+    in empty anonymous class body
+    in empty method body
+    in empty block
+    in empty enum declaration
+    in empty enum constant body
+    in empty annotation body
+    NOT at end of file
+  Array initializers:
+    NOT insert new line after opening brace of array initializer
+    NOT insert new line before closing brace of array initializer
+  Empty statements:
+    put empty statement on new line
+    insert new line after annotations
+
+3.6 Control Statements
+  General:
+    insert new line before "else" in an "if" statement
+    insert new line before "catch" in a "try" statement
+    insert new line before "finally" in a "try" statement
+    NOT insert new line before "while" in a "do" statement 
+  "if else"
+    NOT keep "then" statement on same line
+    NOT keep "else" statement on same line
+    keep "else if" on one line
+    NOT keep "return" or "throw" clause on one line
+
+3.7 Line Wrapping
+  Maximum line width: 80
+  Default indentation for wrapped lines: 2
+  Default indentation for array initializers: 2
+  Class Declarations
+      wrap only when necessary (2 of 2)
+      default indentation (2 of 2)
+      NOT force split
+  Constructor declarations
+      wrap only when necessary (2 of 2)
+      default indentation (2 of 2)
+      NOT force split
+  Method declarations
+      wrap only when necessary (2 of 2)
+      default indentation (2 of 2)
+      NOT force split
+  Enum declarations
+      wrap only when necessary (2 of 2)
+      default indentation (2 of 2)
+      NOT force split
+  Function Calls
+      wrap only when necessary (5 of 5)
+      default indentation (5 of 5)
+      NOT force split
+  Expressions
+    Binary expressions
+      wrap only when necessary
+      default indentation
+      NOT force split
+      NOT wrap before operator
+    Conditionals
+      Wrap all elements, except first element if not necessary
+      Default indentation
+      NOT force split
+    Array initializers
+      wrap only when necessary
+      default indentation
+      NOT force split
+    Assignments
+      wrap only when necessary
+      default indentation
+      NOT force split
+  Statements
+      wrap only when necessary
+      default indentation
+      NOT force split
+
+3.8 Comments
+  General Settings:
+    enable Javadoc comment formatting
+    enable block comment formatting
+    enable line comment formatting
+    enable header comment formatting
+    NOT never indent block comments on first column
+    NOT never indent line comments on first column
+  Javadoc comment settings:
+    Format HTML tags
+    Format Java code snippets inside "pre" tags
+    Blank line before Javadoc tags
+    Indent javadoc tags
+    Indent description after @param
+    New line after @param tags
+    NOT remove blank lines
+  Black comment settings:
+    NOT remove blank lines
+  Line width:
+    Maximum line width for comments: 80
+
+4.0 Compiler Settings
+
+4.1 errors/warnings code style:
+
+WARN non-static access to static member
+WARN indirect access to static member
+IGNORE unqualified access to instance field
+IGNORE undocumented empty block
+WARN access to a non-accessible member of an enclosing type
+WARN method with a constructor name
+WARN parameter assignment
+IGNORE non-externalized strings missing/unused $NON-NLS$ tag
+
+4.2 errors/warnings Potential Programming problems:
+
+IGNORE serializable class without serialVersuionUID
+WARN Assignment has no effect
+WARN possible accidental boolean assignment
+WARN  "finally" does not complete normally
+IGNORE empty statement
+WARN using a char array in string concatenation
+WARN hidden catch block
+WARN inexact type match for vararg arguments
+WARN boxing and unboxing conversions
+WARN enum type constant not covered on switch
+WARN "switch" case fall through
+IGNORE null pointer access
+IGNORE potential null pointer access
+
+4.3 errors/warnings Name Shadowing and Conflicts
+
+WARN field declaration hides another field or variable
+WARN local variable declaration hides another field or variable
+  NOT include constructor or setter method parameters
+WARN type parameter hides another type
+WARN method overridden but not package visible
+WARN interface method conflicts with protected "Object" method
+
+4.4 Deprecated and restricted API
+
+WARN deprecated API
+  NOT signal use of deprecated API inside deprecated code
+  NOT signal overriding or implementing deprecated method
+ERROR forbidden reference
+WARN discouraged reference
+
+4.5 Unnecessary code
+
+WARN local variable is never erad
+IGNORE parameter is never read
+WARN unused import
+WARN unused local or private member
+WARN redundant null check
+IGNORE unnecessary "else" statement
+WARN unnecessary cast or "instanceof" operation
+IGNORE unnecessary declaration of thrown checked exception
+WARN unused "break" or "continue" label
+
+4.6 Generic Types
+
+WARN unchecked generic type operation
+WARN usage of a raw type
+WARN generic type parameter declared with a final type bound
+
+4.7 Annotations
+
+WARN missing "@Override" annotation
+WARN missing "@Deprecated" annotation
+WARN annotation is used as super interface
+WARN Unhandled warning token in "@SuppressWarnings"
+  enable "@SuppressWarnings" annotations
+
+
+1. Create the "src" project.
+
+1.1 Add the  following jars to the project build path.  Make sure to
+update their location if the underlying version in GCM or your JDK changes.
+    antlr.jar
+    ant.jar
+    ant-junit.jar
+    viewsall.jar
+    mail.jar
+    xmlParserAPIs.jar
+    commons-logging.jar
+    commons-modeler.jar
+    helpfile.jar
+    jhall.jar
+    jms.jar
+    mx4j.jar
+    mx4j-remote.jar
+    mx4j-tools.jar
+    jce.jar
+    jsse.jar
+    JDK/rt.jar
+
+1.2 Set up the project source path:
+   Include com-gemstone/**/*.java
+   Include javax/**
+   Exclude **/.svn/**
+   Exclude **/Atomic50StatisticsImpl.java
+   Exclude **/VMSTats50.java
+   Exclude com/gemstone/**/doc-files/*.java
+   Exclude com/gemstone/gemfire/internal/concurrent/*5*.java
+
+2 Create the "quickstart" project.
+
+2.1 Require the "src" project on the build path.
+
+2.2 Exclude the  following patterns from the build path:
+  .classpath
+  .project
+  classes/
+  gemfire.properties
+  overflowData1/
+  persistData1/
+  QuickStart.css
+  QuickStart.html
+  xml/
+
+3 Create the "examples" project.
+
+3.1. Require the "src" project on the build path.
+
+3.2 Include the "examples/dist" folder in the build path.
+
+3.3 Include the following jars in the build path.  Make sure to
+update their location if the underlying version in GCM or your JDK changes.
+  commons-logging-1.1.1.jar
+  mx4j.jar
+  mx4j-remote.jar
+  mx4j-tools.jar
+  JDK/rt.jar
+
+4. Create the "templates" project.
+
+4.1 Require "examples", "quickstart", and "src" projects on the build path.
+
+5. Create the "tests" project"
+
+5.1 Include the "examples", "quickstart", "src", and "templates" projects
+    on the build path.
+
+5.2 Exclude the following patterns from the build path:
+  **/BshServlet.java
+  **/gigaspaces/**
+  **/SizeOfUtl50.java
+  com/gemstone/gemfire/cache30/BridgeLoaderTestSerializableImpl.java
+  com/gemstone/gemfire/internal/cache/CapacityMaintainerImpl.java
+  com/gemstone/gemfire/internal/cache/UnsharedLRUEntriesMapTestHelper.java
+
+5.3 Include the following jars in the build path.  Make sure to
+update their location if the underlying version in GCM or your JDK changes.
+  tests/lib/connector.jar
+  tests/lib/derby.jar
+  tests/lib/facetsAdapter.jar
+  tests/lib/gsjserver.jar
+  tests/lib/jdom.jar
+  tests/lib/noanttestrunner.jar
+  tests/cacheperf/poc/citi/rdsmodel.jar
+  tests/lib/xercesImpl.jar
+  tests/lib/xml-apis.jar
+  ant.jar
+  ant-junit.jar
+  xercesImpl.jar
+  GroboTestingJUnit-1.1.0-core.jar
+  httpunit.jar
+  js.jar
+  junit.jar
+  log4j-1.2.8.jar
+  nekohtml.jar
+  servlet.jar
+  Tidy.jar
+  xmlParserAPIs.jar
+  commongs-logging.jar
+  mx4j.jar
+  mx4j-remote.jar
+  db.jar
+  dbxml.jar
+  classes12.jar
+  JDK/jce.jar
+  JDK/jsse.jar
+  JDK/rt.jar
+  JDK/tools.jar

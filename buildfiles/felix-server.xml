@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="felix-server">
+
+  <target name="-felix-init"
+          description="Initialization logic for the Felix Framework targets."
+          depends="props"
+          unless="condition.felix.inited">
+    <!-- container tests context configuration, meta-data and properties -->
+    <propertycopy name="container.install.dir" from="tests.container.dir" override="true" silent="true"/>
+    <property name="container.install.dir" location="${tests.out.dir}/container"/>
+    <propertycopy name="felix.gemfirePropertyFile" from="container.tests.gemfirePropertyFile" override="true" silent="true"/>
+    <property name="felix.gemfirePropertyFile" location="${tests.out.dir}/config/gemfire.properties"/>
+    <propertycopy name="felix.gemfire.licensing.licensingClientLogVerbose" from="container.tests.gemfire.licensing.licensingClientLogVerbose" override="true" silent="true"/>
+    <property name="felix.gemfire.licensing.licensingClientLogVerbose" value="false"/>
+
+    <!-- felix framework v3.2.2 file system path configuration -->
+    <property name="felix.322.installation.file" location="${felix.server.dir}/org.apache.felix.main.distribution-3.2.2.zip"/>
+    <property name="felix.322.home.dir" location="${container.install.dir}/felix-framework-3.2.2"/>
+    <property name="felix.322.bundle.dir" location="${felix.322.home.dir}/bundle"/>
+    <property name="felix.322.cache.dir" location="${felix.322.home.dir}/felix-cache"/>
+    <property name="felix.322.conf.dir" location="${felix.322.home.dir}/conf"/>
+    <property name="felix.322.source.config.file" location="${tests.src.dir}/container/felix-3.2.2-config.properties"/>
+    <property name="felix.322.target.config.file" location="${felix.322.conf.dir}/config.properties"/>
+    <property name="felix.322.java.policy.file" location="${felix.322.conf.dir}/java.policy"/>
+
+    <!--felix framework file system path configuration -->
+    <propertycopy name="felix.installation.file" from="felix.322.installation.file" override="true"/>
+    <propertycopy name="felix.home.dir" from="felix.322.home.dir" override="true"/>
+    <dirname file="${felix.home.dir}" property="felix.home.parent.dir"/>
+    <propertycopy name="felix.bundle.dir" from="felix.322.bundle.dir" override="true"/>
+    <propertycopy name="felix.cache.dir" from="felix.322.cache.dir" override="true"/>
+    <propertycopy name="felix.conf.dir" from="felix.322.conf.dir" override="true"/>
+    <propertycopy name="felix.source.config.file" from="felix.322.source.config.file" override="true"/>
+    <propertycopy name="felix.target.config.file" from="felix.322.target.config.file" override="true"/>
+    <propertycopy name="felix.java.policy.file" from="felix.322.java.policy.file" override="true"/>
+
+    <condition property="condition.felix.installed" value="true">
+      <istrue value="${skip.felix.tests}"/>
+    </condition>
+
+    <property name="condition.felix.inited" value="true"/>
+  </target>
+
+  <target name="-create-felix-config-file"
+          description="Creates a custom configuration file for the Felix Framework."
+          depends="-felix-init">
+    <propertyregex property="antlr.jar.location" override="true" input="${product.lib.dir}/${antlr.jar.name}" regexp="\\" replace="/"
+                   casesensitive="true" global="true" defaultValue="${product.lib.dir}/${antlr.jar.name}"/>
+  	<propertyregex property="commons-io.jar.location" override="true" input="${product.lib.dir}/${commons-io.jar.name}" regexp="\\" replace="/"
+  	               casesensitive="true" global="true" defaultValue="${product.lib.dir}/${commons-io.jar.name}"/>
+  	<propertyregex property="gemfire.jar.location" override="true" input="${product.lib.dir}/${gemfire.jar.name}" regexp="\\" replace="/"
+                   casesensitive="true" global="true" defaultValue="${product.lib.dir}/${gemfire.jar.name}"/>
+    <copy file="${felix.source.config.file}" toFile="${felix.target.config.file}">
+      <filterset recurse="false">
+        <filter token="FELIX.AUTO.START.1" value="file:${antlr.jar.location} file:${commons-io.jar.location} file:${gemfire.jar.location} @FELIX.AUTO.START.1@"/>
+      </filterset>
+    </copy>
+  </target>
+
+  <target name="-create-java-policy-file"
+          description="Creates a Java policy file to be used by the Felix Framework during runtime."
+          depends="-felix-init">
+    <echo file="${felix.java.policy.file}" append="false">
+grant {
+  permission java.security.AllPermission;
+};
+    </echo>
+  </target>
+
+  <target name="-remove-felix-gogo-shell" description="Removes the interactive Felix GoGo shell from the Felix installation."
+          depends="-felix-init">
+    <delete quiet="true">
+      <fileset dir="${felix.bundle.dir}">
+        <include name="org.apache.felix.gogo.*"/>
+      </fileset>
+    </delete>
+  </target>
+
+  <target name="-is-felix-installed"
+          description="Determines if a Felix Framework installation exists."
+          depends="-felix-init"
+          unless="condition.felix.installed">
+    <available file="${felix.home.dir}" type="dir" property="condition.felix.installed" value="true"/>
+  </target>
+
+  <target name="install-felix"
+          description="This target locates the Felix Framework distributable and unpacks it into the tests container directory."
+          depends="-is-felix-installed"
+          extensionOf="-run-container-setup"
+          unless="condition.felix.installed">
+    <mkdir dir="${container.install.dir}"/>
+    <unzip src="${felix.installation.file}" dest="${container.install.dir}" overwrite="true"/>
+    <runtarget target="-is-felix-installed"/>
+    <fail unless="condition.felix.installed" message="Failed to install the Felix Framework!"/>
+    <runtarget target="felix-server.-create-felix-config-file"/>
+    <runtarget target="felix-server.-create-java-policy-file"/>
+    <runtarget target="felix-server.-remove-felix-gogo-shell"/>
+    <copy file="${com-springsource-javax-transaction.jar}" todir="${felix.home.dir}/bundle"/>
+    <echo level="warn" message="Installed the Felix Framework to (${felix.home.dir})"/>
+  </target>
+
+  <target name="create-final-felix-config-file"
+          description="Removes all property placeholders from the Felix configuration file."
+          depends="-felix-init">
+    <copyReplace src-file="${felix.target.config.file}">
+      <filterset recurse="false">
+        <filter token="FELIX.AUTO.START.1" value=""/>
+      </filterset>
+    </copyReplace>
+  </target>
+
+  <target name="felix-clean" description="Delete the Felix cache directory."
+          depends="-felix-init">
+    <delete dir="${felix.cache.dir}" quiet="true" includeemptydirs="true" failonerror="false"/>
+  </target>
+
+  <target name="reinstall-felix" depends="uninstall-felix, install-felix"/>
+
+  <target name="start-felix" description="Starts the Felix Framework."
+          depends="create-final-felix-config-file, felix-clean">
+    <echo level="warn">Starting Felix...</echo>
+    <java jar="${felix.home.dir}/bin/felix.jar" dir="${felix.home.dir}" fork="true" spawn="true">
+      <sysproperty key="java.security.policy" value="${felix.java.policy.file}"/>
+      <sysproperty key="gemfirePropertyFile" value="${felix.gemfirePropertyFile}"/>
+      <sysproperty key="gemfire.container-tests.rmi-registry.port" value="${container.tests.rmi.registry.port}"/>
+      <sysproperty key="gemfire.licensing.licensingClientLogVerbose" value="${felix.gemfire.licensing.licensingClientLogVerbose}"/>
+    </java>
+  </target>
+
+  <target name="stop-felix" description="Stops the Felix Framework." depends="-felix-init">
+    <echo level="warn">Proper shutdown of the Felix Framework has not been implemented yet!</echo>
+    <!--property name="condition.felix.stopped" value="true"/-->
+  </target>
+
+  <target name="force-stop-felix" description="Forces the Felix Framework to shutdown."
+          depends="-felix-init"
+          unless="condition.felix.stopped">
+    <if>
+      <os family="unix"/>
+      <then>
+        <echo level="warn">Killing the Felix Framework process...</echo>
+        <shellscript shell="bash">
+          kill -9 `ps aux | grep "felix" | grep -v "grep felix" | awk '{print $2}'`
+        </shellscript>
+      </then>
+    </if>
+  </target>
+
+  <target name="uninstall-felix"
+          description="This target uninstalls the Felix Framework installation from localhost."
+          depends="-felix-init"
+          extensionOf="run-container-tests-clean">
+    <delete dir="${felix.home.dir}" verbose="true" includeemptydirs="true" failonerror="false"/>
+  </target>
+
+</project>

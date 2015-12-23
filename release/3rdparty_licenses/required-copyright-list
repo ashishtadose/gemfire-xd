@@ -1,0 +1,31 @@
+GemFire Required Copyright Info
+[last updated 24-Feb-2005, v3.5.2]
+
+Here is a list of all the gemfire files that need to be updated if 
+copyrights change:
+
+release/3rdparty_licenses/required-copyright-list <- you are here
+
+release/3rdparty_licenses/GemFire-third-party-list
+release/3rdparty_licenses/GemFireXD-third-party-list
+  Descriptions of each 3rd party package, including copyright info. If you add
+  a new 3rd party package, update third-party-list then update the files below.
+
+release/docfiles/copyright.html
+  Formatted copyright text accessed from doc index. Any copyrights changes
+  should also be sent to person in charge of GemFire docs/pubs so that the
+  Framemaker pdf versions of the documentations can also be updated. 
+
+src/com/gemstone/gemfire/internal/Banner.java
+  Same copyright text as copyright.html, compressed to a single paragraph to
+  save space.  The intellectual property statement and the trademarks are 
+  already coded in this file in an abbreviated form and rarely need updating. 
+  This banner appears at the top of log files, so must be formatted to 75 
+  columns (2 spaces of indent followed by max 73 chars), each line coded as 
+  a separate string.  Also, HTML code must be converted to ASCII (for example, 
+  change "&copy;" to "Copyright"). 
+
+build.xml
+  Make sure the javadoc copyrights are updated as they are in a slighly 
+  different format then the source copyrights which allow them to miss 
+  the copyright sweep changes.

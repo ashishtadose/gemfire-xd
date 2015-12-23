@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="utilities">
+  <description>
+    The Utilities Ant XML build script file defines reusable and useful utility functions/tasks for use inside other
+    GemFire build targets.
+  </description>
+  
+  <taskdef resource="org/apache/ant/dotnet/antlib.xml"/>
+
+  <typedef resource="org/tigris/subversion/svnant/svnantlib.xml"/>
+
+  <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+           uri="antlib:org.apache.maven.artifact.ant"/>
+
+  <!-- this entry forces ant to be copied locally to build the sdk -->
+  <taskdef resource="com/springsource/bundlor/ant/antlib.xml"
+           uri="antlib:com.springsource.bundlor.ant">
+    <classpath id="bundlor.classpath">
+      <fileset dir="${bundlor.dir}/dist"/>
+      <fileset dir="${bundlor.dir}/lib"/>
+    </classpath>
+  </taskdef>
+
+  <macrodef name="conditionalProperty">
+    <attribute name="name"/>
+    <attribute name="value"/>
+    <attribute name="if" default="NO.PROPERTY.SPECIFIED"/>
+    <attribute name="unless" default="NO.PROPERTY.SPECIFIED"/>
+    <sequential>
+      <if>
+        <and>
+          <or>
+            <equals arg1="@{if}" arg2="NO.PROPERTY.SPECIFIED" casesensitive="true"/>
+            <isset property="@{if}"/>
+          </or>
+          <not>
+            <isset property="@{unless}"/>
+          </not>
+        </and>
+        <then>
+          <property name="@{name}" value="@{value}"/>
+        </then>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="copyReplace">
+    <attribute name="src-file"/>
+    <attribute name="target-file" default="@{src-file}.tmp"/>
+    <element name="filterset-element" implicit="yes" optional="yes"/>
+    <sequential>
+      <copy file="@{src-file}" toFile="@{target-file}" overwrite="true" force="true">
+        <filterset-element/>
+      </copy>
+      <move file="@{target-file}" toFile="@{src-file}" overwrite="true" force="true"/>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="echoIf" description="Echos the specified message only if the given property is set.">
+    <attribute name="level" default="info"/>
+    <attribute name="property" default="NO.PROPERTY.SPECIFIED"/>
+    <text name="message"/>
+    <sequential>
+      <if>
+        <or>
+          <equals arg1="@{property}" arg2="NO.PROPERTY.SPECIFIED" casesensitive="true" trim="true"/>
+          <isset property="@{property}"/>
+        </or>
+        <then>
+          <echo level="@{level}">@{message}</echo>
+        </then>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="echoUnless" description="Echos the specified message only if the given property is not set.">
+    <attribute name="level" default="info"/>
+    <attribute name="property" default="NO.PROPERTY.SPECIFIED"/>
+    <text name="message"/>
+    <sequential>
+      <if>
+        <not>
+          <isset property="@{property}"/>
+        </not>
+        <then>
+          <echo level="@{level}">@{message}</echo>
+        </then>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <target name="findbugs">
+    <conditional if="myenv.FINDBUGS_HOME">
+      <property name="findbugs.home" value="${myenv.FINDBUGS_HOME}"/>
+    </conditional>
+    <property name="findbugs.home" value="${gcm.dir}/${findbugs.dir}"/>
+    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs-ant.jar}"/>
+
+    <echo message="findbugs home: ${findbugs.home}" level="info" />
+    <!-- Raw output file is find-bugs-raw.xml -->
+    <findbugs home="${findbugs.home}"
+              output="xml"
+              outputFile="find-bugs-raw.xml"
+              excludeFilter="${basedir}/buildfiles/findbugs_exclude.xml"
+              jvmargs="-Xmx1024M" >
+      <sourcePath path="${findbugs.sourcePath}" />
+      <class location="${findbugs.class}" />
+    </findbugs>
+    <!-- Copy raw output file and strip out line numbers -->
+    <copy file="${basedir}/find-bugs-raw.xml" overwrite="true"
+          tofile="${basedir}/find-bugs.xml"/>
+    <replaceregexp file= "find-bugs.xml" byline="true">
+      <regexp pattern="line=&quot;(.*)&quot;(.*?/>)"/>
+      <substitution expression="line=&quot;see:find-bugs-raw.xml&quot;\$2" />
+    </replaceregexp >
+  </target>
+</project>

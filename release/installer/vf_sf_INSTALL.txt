@@ -1,0 +1,81 @@
+VMware vFabric(TM) GemFireXD(R)
+-------------------------------------
+INSTALLATION OF VFABRIC GEMFIREXD
+-------------------------------------
+
+ This document describes installation of vFabric GemFireXD __VERSION__
+
+  To install GemFireXD, you will need:
+
+   * Java Runtime Environment 1.6 or higher.
+
+ Minimum System Requirements
+   * Windows XP SP3 on Intel 2 GHz Pentium 4 (or equivalent) 1 GB RAM
+   * Linux Intel 2GHz Pentium 4 (or equivalent) 1 GB RAM
+
+ Running the Installer 
+ ---------------------
+
+ Invoke the installer with this command line:
+
+ Windows:
+   %JAVA_HOME%\bin\java.exe -jar __JAR_NAME__
+  
+ Linux:
+   ${JAVA_HOME}/bin/java -jar __JAR_NAME__
+
+   1) A License Agreement (EULA) will be displayed
+   2) You will then be prompted to choose an installation directory.
+     The product will be expanded into the directory specified. 
+     The total disk space required is approximately __SIZE__ Megabytes.
+
+ If you have difficulties getting the installer to work correctly 
+ you have the option of unzipping the jar file directly using
+ any common zip extraction tool. 
+
+ Optional Installer System Properties
+ ------------------------------------
+
+ -Dgemfirexd.installer.directory=<path>
+
+ Specifies the directory to install GemFireXD into and causes the installer to
+ run in an unattended mode suitable for automation. The directory
+ <path>/__PRODUCT_DIR__ will be created. The installation will fail 
+ rather than overwrite preexisting files.
+
+ -Dgemfire.installer.opensource=true
+
+ Many open source licenses require that vendors who use and/or modify their
+ libraries make that available. While this argument is still valid the Open
+ Source Disclosure zip is no longer include with the installer and had been
+ moved to the VMWare.com website.
+
+ Built-in Evaluation License
+ -----------------------------------
+
+ GemFireXD comes with a built-in evaluation license that has a fixed limit 
+ of three evaluation data stores.  If you need an evaluation license beyond 
+ this please contact your sales person.
+
+ Documentation
+ -------------
+
+ After installation the product documentation is available through links 
+ in the docs/index.html file in the product. 
+
+ Uninstalling GemFireXD 
+ --------------------
+ 
+ To uninstall GemFireXD delete the product tree.
+ No additional registry entries or system modifications are needed.
+
+ Contacting Support
+ ---------------------------
+ VMware Support Services can be accessed from the VMware Web site
+ or via the phone. Access varies by license type, support offering
+ (contract or per-incident) and product. For instructions on how to
+ file a Support Request, please see the VMware web page below on
+ "How to File a Support Request".
+
+ https://www.vmware.com/support/policies/howto.html
+

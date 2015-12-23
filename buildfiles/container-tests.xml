@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="container-tests" default="run-container-tests">
+
+  <!-- Import all container declarations (defined in Ant build script files) in which the GemFire-based tests will be run. -->
+  <import file="${basedir}/buildfiles/felix-server.xml"/>
+  <import file="${basedir}/buildfiles/virgo-server.xml"/>
+  <import file="${basedir}/buildfiles/container-tests-setup.xml"/>
+
+  <extension-point name="-run-container-setup" depends="-container-tests-init"/>
+  <extension-point name="-run-container-tests-setup" depends="-container-tests-init"/>
+  <extension-point name="-run-container-listeners" depends="-container-tests-init"/>
+
+  <target name="-container-tests-init" description="Initialization logic to prepare for container tests execution."
+          depends="props, define-test-groups, -keep-going"
+          unless="condition.container.tests.inited">
+    <!-- container tests file system path configuration -->
+    <property name="tests.config.dir" location="${tests.out.dir}/config"/>
+    <property name="tests.container.dir" location="${tests.out.dir}/container"/>
+
+    <condition property="tests.results.container.dir" value="${tests.results.dir}64/container" else="${tests.results.dir}/container">
+      <istrue value="${condition.run.container.tests.using.64-bit.jvm}"/>
+    </condition>
+
+    <!-- rmi registry configuration properties -->
+    <property name="container.tests.rmi.registry.port.default" value="1099"/>
+    <property name="container.tests.rmi.registry.properties.file" location="${tests.config.dir}/rmiregistry.properties"/>
+
+    <!-- gemfire configuration properties -->
+    <property name="container.tests.gemfire.log-level.default" value="fine"/>
+    <property name="container.tests.gemfire.mcast-port.default" value="56123"/>
+    <property name="container.tests.gemfire.properties.file" location="${tests.config.dir}/gemfire.properties"/>
+
+    <!-- gemfire system properties -->
+    <property name="container.tests.gemfirePropertyFile" location="${container.tests.gemfire.properties.file}"/>
+    <property name="container.tests.gemfire.licensing.licensingClientLogVerbose" value="false"/>
+
+    <!-- container tests configuration properties -->
+    <condition property="container.tests.dprop" value="${d64prop}" else="${d32prop}">
+      <istrue value="${condition.run.container.tests.using.64-bit.jvm}"/>
+    </condition>
+
+    <condition property="container.tests.jvm" value="${unittest.java64}" else="${unittest.java32}">
+      <istrue value="${condition.run.container.tests.using.64-bit.jvm}"/>
+    </condition>
+
+    <property name="container.tests.threshold" value="0"/>
+
+    <path id="extra.classpath.ref">
+      <pathelement location="${tests.src.dir}"/>
+    </path>
+
+    <!-- container tests JUnit task macro -->
+    <macrodef name="run-container-junit">
+      <attribute name="container" default=""/>
+      <attribute name="dprop" default="${container.tests.dprop}"/>
+      <attribute name="jvm" default="${container.tests.jvm}"/>
+      <attribute name="tests-results-dir" default="${tests.results.container.dir}/@{container}"/>
+      <attribute name="threshold" default="${container.tests.threshold}"/>
+      <sequential>
+        <run-junit testGroup="${container.testlist}"
+                   dprop="@{dprop}"
+                   extra-classpath-ref="extra.classpath.ref"
+                   jvm="@{jvm}"
+                   results="@{tests-results-dir}"
+                   suite="container"
+                   threshold="@{threshold}">
+          <junit-configuration-elements>
+            <sysproperty key="gemfirePropertyFile" value="${container.tests.gemfirePropertyFile}"/>
+            <sysproperty key="gemfire.container-tests.rmi-registry.port" value="${container.tests.rmi.registry.port}"/>
+            <sysproperty key="gemfire.licensing.licensingClientLogVerbose" value="${container.tests.gemfire.licensing.licensingClientLogVerbose}"/>
+            <sysproperty key="gemfire.log-level" value="${container.tests.gemfire.log-level.default}"/>
+          </junit-configuration-elements>
+        </run-junit>
+      </sequential>
+    </macrodef>
+
+    <!--
+      TODO move this task definition to a more "reusable" location (such as the props target in build.xml);
+      this means the run-junit macrodef in buildfiles/tests.xml should be refactored!
+    -->
+    <taskdef name="available-port" classname="com.gemstone.gemfire.internal.AvailablePortTask">
+      <classpath>
+        <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+      </classpath>
+    </taskdef>
+
+    <!-- determination of whether to run container tests (or whether container tests are enabled) -->
+    <if>
+      <isset property="skip.container.tests"/>
+      <then>
+        <property name="skip.felix.tests" value="true"/>
+        <property name="skip.virgo.tests" value="true"/>
+      </then>
+      <else>
+        <delete dir="${tests.results.container.dir}" quiet="true" includeemptydirs="true" failonerror="false"/>
+      </else>
+    </if>
+
+    <property name="condition.container.tests.inited" value="true"/>
+  </target>
+
+  <target name="-container-tests-clean" description="Cleans up container tests configuration artifacts after container tests execution."
+          depends="-container-tests-init"
+          extensionOf="run-container-tests-clean">
+    <delete dir="${tests.config.dir}" quiet="true" includeemptydirs="true" failonerror="false"/>
+    <delete dir="${tests.container.dir}" quiet="true" includeemptydirs="true" failonerror="false"/>
+  </target>
+
+  <target name="create-gemfire-configuration-file" description="Creates a gemfire.properties file to be shared by the container VMs and tests VM."
+          depends="-container-tests-init"
+          extensionOf="-run-container-tests-setup">
+    <mkdir dir="${tests.config.dir}"/>
+
+    <property name="container.tests.gemfire.log-level" value="${container.tests.gemfire.log-level.default}"/>
+    <available-port portProperty="container.tests.gemfire.mcast-port" protocol="socket"/>
+    <property name="container.tests.gemfire.mcast-port" value="${container.tests.gemfire.mcast-port.default}"/>
+
+    <propertyfile file="${container.tests.gemfire.properties.file}" comment="GemFire configuration settings and properties for the distributed system.">
+      <entry key="log-level" value="${container.tests.gemfire.log-level}"/>
+      <entry key="mcast-port" value="${container.tests.gemfire.mcast-port}"/>
+    </propertyfile>
+  </target>
+
+  <target name="get-rmi-registry-port" description="Creates a .properties file containing RMI Registry port configuration to be shared by the container VMs and the tests VM."
+          depends="-container-tests-init"
+          extensionOf="-run-container-setup"
+          unless="container.tests.rmi.registry.port">
+    <mkdir dir="${tests.config.dir}"/>
+
+    <available-port portProperty="available.rmi.registry.port" protocol="socket"/>
+
+    <propertyfile file="${container.tests.rmi.registry.properties.file}" comment="DO NOT EDIT! Used by the GemFire Container Tests to control the RMI Registry port.">
+      <entry key="rmi.registry.port" default="${available.rmi.registry.port}" type="string"/>
+    </propertyfile>
+
+    <property file="${container.tests.rmi.registry.properties.file}" prefix="container.tests."/>
+
+    <!--echo level="warn">Available RMI Registry Port is (${available.rmi.registry.port})</echo>
+    <echo level="warn">Existing RMI Registry Port is (${container.tests.rmi.registry.port})</echo-->
+  </target>
+
+  <target name="launch-container-tests" depends="-container-tests-init">
+    <run-container-junit/>
+  </target>
+
+  <target name="run-container-tests64"
+          description="Runs all tests associated with testing Gemfire inside various containers using a 64-bit JVM."
+          depends="props">
+    <property name="condition.run.container.tests.using.64-bit.jvm" value="true"/>
+    <runtarget target="run-container-tests"/>
+  </target>
+
+  <target name="run-container-tests"
+          description="Runs all tests associated with testing GemFire inside various containers, such as tc server, virgo, felix, etc."
+          depends="-run-container-setup, -run-container-tests-setup"
+          unless="skip.container.tests">
+    <!-- prevent Felix bundle listeners from being fired -->
+    <var name="condition.enable.felix.listeners" unset="true"/>
+    <var name="condition.enable.virgo.listeners" value="true"/>
+    <runtarget target="-run-virgo-tests"/>
+    <sleep seconds="5"/>
+    <!-- prevent Virgo bundle listeners from being fired -->
+    <var name="condition.enable.felix.listeners" value="true"/>
+    <var name="condition.enable.virgo.listeners" unset="true"/>
+    <runtarget target="-run-felix-tests"/>
+  </target>
+
+  <target name="-run-felix-tests" description="Runs all tests associated with testing GemFire in Felix."
+          unless="skip.felix.tests">
+    <if>
+      <istrue value="${condition.felix.installed}"/>
+      <then>
+        <trycatch property="felix.exception.message">
+          <try>
+            <echo level="info">Running GemFire container tests using Felix...</echo>
+            <runtarget target="start-felix"/>
+            <runtarget target="-run-container-listeners"/>
+            <run-container-junit container="felix"/>
+          </try>
+          <finally>
+            <runtarget target="stop-felix"/>
+            <runtarget target="force-stop-felix"/>
+          </finally>
+        </trycatch>
+        <echoIf level="error" property="felix.exception.message">${felix.exception.message}</echoIf>
+      </then>
+    </if>
+  </target>
+
+  <target name="-run-virgo-tests" description="Runs all tests associated with testing GemFire in Virgo."
+          unless="skip.virgo.tests">
+    <if>
+      <istrue value="${condition.virgo.installed}"/>
+      <then>
+        <trycatch property="virgo.exception.message">
+          <try>
+            <echo level="info">Running GemFire container tests using Virgo...</echo>
+            <runtarget target="start-virgo"/>
+            <runtarget target="-run-container-listeners"/>
+            <run-container-junit container="virgo"/>
+          </try>
+          <finally>
+            <runtarget target="stop-virgo"/>
+            <runtarget target="force-stop-virgo"/>
+          </finally>
+        </trycatch>
+        <echoIf level="error" property="virgo.exception.message">${virgo.exception.message}</echoIf>
+      </then>
+    </if>
+  </target>
+
+  <extension-point name="run-container-tests-clean"/>
+
+</project>

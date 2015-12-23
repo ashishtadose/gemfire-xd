@@ -1,0 +1,228 @@
+
+
+<!-- This this an Ant file which defines the hadoop classpath for a particular hadoop distribution -->
+<!-- Hadoop Distribution Abbreviations -->
+<!-- AHD = Apache HD -->
+<!-- PHD = Pivotal HD -->
+<project name="dependencies-hadoop">
+
+  <!-- Set default Hadoop distribution -->
+  <property name="hadoopDist" value="PHD220"/>
+  
+  <echo level="info" message="Using Hadoop dist: ${hadoopDist}"/>
+  
+  <property name="hadoop.base" value="where/java/hadoop"/>
+
+  <property name="PHD200.home" value="${hadoop.base}/hadoop-2.2.0-gphd-3.0.0.0"/>
+  <property name="PHD201.home" value="${hadoop.base}/hadoop-2.2.0-gphd-3.0.1.0-148"/>
+  <property name="PHD210.home" value="${hadoop.base}/hadoop-2.2.0-gphd-3.1.0.0-175"/>
+  <property name="PHD220.home" value="${hadoop.base}/hadoop-2.4.1-gphd-3.2.0.0-54"/>
+  <property name="HDP220.home" value="${hadoop.base}/hdp-2.2.0.2.0.6.0-102"/>
+  <property name="libhadoop.so.name" value="libhadoop.so"/>
+
+  <property name="hbase.version" value="0.94.4-gemfire-r45047"/>
+  <property name="hbase.jar.name" value="hbase-${hbase.version}.jar"/>
+  <condition property="hbase.jar" value="${hbase.jar.path}/${hbase.jar.name}">
+    <isset property="hbase.jar.path"/>
+  </condition>
+  
+  <macrodef name="set-hadoop-classpath">
+    
+    <!-- Set defaults for attributes -->
+    <attribute name="hadoop.home" default="NO_HADOOP_HOME_FOUND"/>
+    <sequential>
+      <property name="hadoop.common.lib" value="@{hadoop.home}/share/hadoop/common/lib"/>
+      
+      <property name="hadoop-annotations.jar.name" value="hadoop-annotations-${hadoop.version}.jar"/>
+      <property name="hadoop-auth.jar.name" value="hadoop-auth-${hadoop.version}.jar"/>
+      <property name="hadoop-common.jar.name" value="hadoop-common-${hadoop.version}.jar"/>
+      <property name="hadoop-hdfs.jar.name" value="hadoop-hdfs-${hadoop.version}.jar"/>
+      <property name="hadoop-mapreduce-client-core.jar.name" value="hadoop-mapreduce-client-core-${hadoop.version}.jar"/>
+      <property name="hadoop-hdfs-test.jar.name" value="hadoop-hdfs-${hadoop.version}-tests.jar"/>
+      <property name="hadoop-common-test.jar.name" value="hadoop-common-${hadoop.version}-tests.jar"/>
+
+      <property name="jersey-core.jar.name" value="jersey-core-${jersey.version}.jar"/>
+      <property name="jersey-server.jar.name" value="jersey-server-${jersey.version}.jar"/>
+      
+      <property name="jetty.jar.name" value="jetty-${jetty.version}.jar"/>
+      <property name="jetty-util.jar.name" value="jetty-util-${jetty.version}.jar"/>
+
+      <property name="protobuf-java.jar.name" value="protobuf-java-${protobuf-java.version}.jar"/>
+      
+      <getdependency name="hadoop-annotations.jar" location="${hadoop.common.lib}/${hadoop-annotations.jar.name}"/>
+      <getdependency name="hadoop-auth.jar" location="${hadoop.common.lib}/${hadoop-auth.jar.name}"/>
+      <getdependency name="hadoop-common.jar" location="@{hadoop.home}/share/hadoop/common/${hadoop-common.jar.name}"/>
+      <getdependency name="hadoop-hdfs.jar" location="@{hadoop.home}/share/hadoop/hdfs/${hadoop-hdfs.jar.name}"/>
+      <getdependency name="hadoop-mapreduce-client-core.jar" location="@{hadoop.home}/share/hadoop/mapreduce/${hadoop-mapreduce-client-core.jar.name}"/>
+      <getdependency name="hadoop-common-test.jar" location="@{hadoop.home}/share/hadoop/common/${hadoop-common-test.jar.name}"/>
+      <getdependency name="hadoop-hdfs-test.jar" location="@{hadoop.home}/share/hadoop/hdfs/${hadoop-hdfs-test.jar.name}"/>
+      <getdependency name="libhadoop.so" location="@{hadoop.home}/lib/native/${libhadoop.so.name}" forClasspath="false"/>
+      <getdependency name="jersey-core.jar" location="${hadoop.common.lib}/${jersey-core.jar.name}"/>
+      <getdependency name="jersey-server.jar" location="${hadoop.common.lib}/${jersey-server.jar.name}"/>
+      <getdependency name="jetty.jar" location="${hadoop.common.lib}/${jetty.jar.name}"/>
+      <getdependency name="jetty-util.jar" location="${hadoop.common.lib}/${jetty-util.jar.name}"/>
+      <getdependency name="protobuf-java.jar" location="${hadoop.common.lib}/${protobuf-java.jar.name}"/>
+
+      <path id="hadoop.classpath">
+        <pathelement location="${hadoop.common.lib}/commons-cli-${hadoop.commons-cli.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-codec-${hadoop.commons-codec.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-collections-${hadoop.commons-collections.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-configuration-${hadoop.commons-configuration.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-io-${hadoop.commons-io.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-lang-${hadoop.commons-lang.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/commons-logging-${hadoop.commons-logging.version}.jar"/>
+        <pathelement location="${hadoop.common.lib}/guava-11.0.2.jar"/>
+        <pathelement location="${hadoop.common.lib}/jsr305-1.3.9.jar"/>
+        <pathelement location="${hadoop.common.lib}/slf4j-api-1.7.5.jar"/>
+        <pathelement location="${hadoop-annotations.jar}"/>
+        <pathelement location="${hadoop-auth.jar}"/>
+        <pathelement location="${hadoop-common.jar}"/>
+        <pathelement location="${hadoop-common-test.jar}"/>
+        <pathelement location="${hadoop-hdfs.jar}"/>
+        <pathelement location="${hadoop-hdfs-test.jar}"/>
+        <pathelement location="${hadoop-mapreduce-client-core.jar}"/>
+        <pathelement location="${hbase.jar}"/>
+        <pathelement location="${log4j.jar}"/>
+        <pathelement location="${protobuf-java.jar}"/>
+        <pathelement location="${slf4j-jdk14.jar}"/>
+      </path>
+
+      <path id="jersey.classpath">
+        <pathelement location="${jersey-core.jar}"/>
+        <pathelement location="${jersey-server.jar}"/>
+      </path>
+
+      <path id="jetty.classpath">
+        <pathelement location="${jetty.jar}"/>
+        <pathelement location="${jetty-util.jar}"/>
+      </path>
+
+    </sequential>
+  </macrodef>
+  
+  <if>
+    <equals arg1="${hadoopDist}" arg2="AHD220"/>
+    <then>
+      <property name="hadoop.version" value="2.2.0"/>
+      <property name="AHD220.home" value="${hadoop.base}/hadoop-${hadoop.version}"/>
+
+      <property name="hadoop.commons-cli.version" value="1.2"/>
+      <property name="hadoop.commons-codec.version" value="1.4"/>
+      <property name="hadoop.commons-collections.version" value="3.2.1"/>
+      <property name="hadoop.commons-configuration.version" value="1.6"/>
+      <property name="hadoop.commons-io.version" value="2.1"/>
+      <property name="hadoop.commons-lang.version" value="2.5"/>
+      <property name="hadoop.commons-logging.version" value="1.1.1"/>
+      
+      <property name="jersey.version" value="1.9"/>
+
+      <property name="jetty.version" value="6.1.26"/>
+
+      <property name="protobuf-java.version" value="2.5.0"/>
+      
+      <set-hadoop-classpath hadoop.home="${AHD220.home}"/>
+    </then>
+    <elseif>
+      <equals arg1="${hadoopDist}" arg2="AHD241"/>
+      <then>
+        <property name="hadoop.version" value="2.4.1"/>
+        <property name="AHD241.home" value="${hadoop.base}/hadoop-${hadoop.version}"/>
+
+        <property name="hadoop.commons-cli.version" value="1.2"/>
+        <property name="hadoop.commons-codec.version" value="1.4"/>
+        <property name="hadoop.commons-collections.version" value="3.2.1"/>
+        <property name="hadoop.commons-configuration.version" value="1.6"/>
+        <property name="hadoop.commons-io.version" value="2.4"/>
+        <property name="hadoop.commons-lang.version" value="2.6"/>
+        <property name="hadoop.commons-logging.version" value="1.1.3"/>
+      
+        <property name="jersey.version" value="1.9"/>
+      
+        <property name="jetty.version" value="6.1.26"/>
+
+        <property name="protobuf-java.version" value="2.5.0"/>
+
+        <set-hadoop-classpath hadoop.home="${AHD241.home}"/>
+      </then>
+    </elseif>
+    <elseif>
+      <equals arg1="${hadoopDist}" arg2="AHD251"/>
+      <then>
+        <property name="hadoop.version" value="2.5.1"/>
+        <property name="AHD251.home" value="${hadoop.base}/hadoop-${hadoop.version}"/>
+
+        <property name="hadoop.commons-cli.version" value="1.2"/>
+        <property name="hadoop.commons-codec.version" value="1.4"/>
+        <property name="hadoop.commons-collections.version" value="3.2.1"/>
+        <property name="hadoop.commons-configuration.version" value="1.6"/>
+        <property name="hadoop.commons-io.version" value="2.4"/>
+        <property name="hadoop.commons-lang.version" value="2.6"/>
+        <property name="hadoop.commons-logging.version" value="1.1.3"/>
+      
+        <property name="jersey.version" value="1.9"/>
+      
+        <property name="jetty.version" value="6.1.26"/>
+
+        <property name="protobuf-java.version" value="2.5.0"/>
+
+        <set-hadoop-classpath hadoop.home="${AHD251.home}"/>
+      </then>
+    </elseif>
+    <elseif>
+      <equals arg1="${hadoopDist}" arg2="PHD220"/>
+      <then>
+        <property name="hadoop.version" value="2.4.1-gphd-3.2.0.0"/>
+
+        <property name="hadoop.commons-cli.version" value="1.2"/>
+        <property name="hadoop.commons-codec.version" value="1.4"/>
+        <property name="hadoop.commons-collections.version" value="3.2.1"/>
+        <property name="hadoop.commons-configuration.version" value="1.6"/>
+        <property name="hadoop.commons-io.version" value="2.4"/>
+        <property name="hadoop.commons-lang.version" value="2.6"/>
+        <property name="hadoop.commons-logging.version" value="1.1.3"/>
+      
+        <property name="jersey.version" value="1.9"/>
+      
+        <property name="jetty.version" value="6.1.26"/>
+
+        <property name="protobuf-java.version" value="2.5.0"/>
+
+        <set-hadoop-classpath hadoop.home="${PHD220.home}"/>
+      </then>
+    </elseif>
+  	<elseif>
+  	      <equals arg1="${hadoopDist}" arg2="HDP220"/>
+  	      <then>
+  	        <property name="hadoop.version" value="2.2.0.2.0.6.0-102"/>
+
+  	        <property name="hadoop.commons-cli.version" value="1.2"/>
+  	        <property name="hadoop.commons-codec.version" value="1.4"/>
+  	        <property name="hadoop.commons-collections.version" value="3.2.1"/>
+  	        <property name="hadoop.commons-configuration.version" value="1.6"/>
+  	        <property name="hadoop.commons-io.version" value="2.4"/>
+  	        <property name="hadoop.commons-lang.version" value="2.6"/>
+  	        <property name="hadoop.commons-logging.version" value="1.1.3"/>
+  	      
+  	        <property name="jersey.version" value="1.9"/>
+  	      
+  	        <property name="jetty.version" value="6.1.26"/>
+
+  	        <property name="protobuf-java.version" value="2.5.0"/>
+
+  	        <set-hadoop-classpath hadoop.home="${HDP220.home}"/>
+  	      </then>
+  	    </elseif>
+    <else>
+      <fail message="Property hadoopDist set to unsupported distribution or invalid value. Must be one of: AHD220, AHD241, AHD251, PHD220"/>
+    </else>
+  </if>
+        
+    <!-- HBase dependency (for soplog) -->
+  <target name="-hbase-dependency" unless="hbase.jar">
+    <getdependency name="hbase.jar" location="where/java/hbase/${hbase.version}/${hbase.jar.name}"/>
+  </target>
+  <!-- end HBase dependency -->
+  
+  <target name="-custom-deps" depends="-hbase-dependency"/>
+
+</project>

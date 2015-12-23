@@ -1,0 +1,31 @@
+#!/bin/ksh
+# Set GEMFIRE to the product toplevel directory
+GEMFIRE=`/usr/bin/dirname $0`
+OLDPWD=$PWD
+cd $GEMFIRE
+export GEMFIRE=`/usr/bin/dirname $PWD`
+cd $OLDPWD
+
+EXTRA_CLASSPATH=$GEMFIRE/lib/tests.jar:$GEMFIRE/lib/tests/results
+
+. $GEMFIRE/bin/.setconfig.sh
+
+java -client -version
+
+# rm -f test.log
+# use for redirection  :
+#  > test.log 2>&1
+
+# for the com.gemstone.gemfire.internal.gfgen.GfGenTest,
+#  current directory must be an empty "results" directory
+# and you have to have Dgemfire.systemDirectory and GEMFIRE
+# properties defined.
+
+# export GEMFIRE_DEBUG=true
+
+echo "starting $@"
+java -client -Xmx256M ${JAVA_ARGS} \
+  -DGEMFIRE=${GEMFIRE} \
+  -Dgemfire.systemDirectory=${GEMFIRE}/defaultSystem \
+  com.gemstone.gemfire.GsTestRunner "$@" 
+

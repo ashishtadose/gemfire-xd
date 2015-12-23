@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<project name="codecoverage" xmlns:jacoco="antlib:org.jacoco.ant">
+
+  <!-- Enable/disable JaCoCo -->
+  <if>
+    <istrue value="${codecoverage}"/>
+    <then>
+      <jacoco:agent property="jacoco-agent.config"/>
+    </then>
+    <else>
+      <jacoco:agent enabled="false" property="jacoco-agent.config"/>
+      <property name="codecoverage" value="false"/>
+    </else>
+  </if>
+    
+  <target name="codecoverage-merge" depends="props">
+    <jacoco:merge destfile="${osbuild.dir}/codecoverage.exec">
+      <fileset dir="${tests.out.dir}" includes="**/*.exec"/>
+    </jacoco:merge>
+  </target>
+
+  <target name="codecoverage-report" depends="codecoverage-merge">
+  
+    <if>
+      <equals arg1="${product}" arg2="gemfire"/>
+      <then>
+        <antcall target="gf-codecoverage-report"/>
+      </then>
+      <else>
+        <antcall target="gfxd-codecoverage-report"/>
+      </else>
+    </if>
+    
+  </target>
+  
+  <target name="gf-codecoverage-report">
+    <jacoco:report>                   
+      <executiondata>
+        <file file="${osbuild.dir}/codecoverage.exec"/>
+      </executiondata>
+                           
+      <structure name="GemFire">
+        <classfiles>
+          <fileset dir="${classes.dir}/com/gemstone/gemfire"/>
+        </classfiles>
+        <sourcefiles encoding="UTF-8">
+          <fileset dir="${src.dir}/com/gemstone/gemfire"/>
+        </sourcefiles>
+      </structure>
+                           
+      <html destdir="${osbuild.dir}/codecoverage-report"/>
+      <xml destfile="${osbuild.dir}/codecoverage-report/codecoverage.xml"/>
+    </jacoco:report>
+  </target>
+  
+  <target name="gfxd-codecoverage-report" depends="-gfxd-props">
+    <jacoco:report>                   
+      <executiondata>
+        <file file="${osbuild.dir}/codecoverage.exec"/>
+      </executiondata>
+                           
+      <structure name="GemFire XD">
+        <classfiles>
+          <!--<fileset dir="${classes.dir}/com/gemstone/gemfire"/>-->
+          <fileset dir="${gemfirexd.out.dir}/classes/com">
+            <exclude name="pivotal/gemfirexd/thrift/generated/*.class"
+/>
+          </fileset>
+        </classfiles>
+        <sourcefiles encoding="UTF-8">
+          <!--<fileset dir="${src.dir}/com/gemstone/gemfire"/>-->
+          <fileset dir="${derby.src}/java">
+            <exclude name="engine/com/pivotal/gemfirexd/thrift/generated/*.java"/>
+          </fileset>
+        </sourcefiles>
+      </structure>
+                           
+      <html destdir="${osbuild.dir}/codecoverage-report"/>
+      <xml destfile="${osbuild.dir}/codecoverage-report/codecoverage.xml"/>
+    </jacoco:report>
+  </target>
+
+</project>

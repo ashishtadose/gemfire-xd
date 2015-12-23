@@ -1,0 +1,3940 @@
+<project name="GemFireXD" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+<description>Targets for GemFireXD product</description>
+
+  <property name="gemfirexd.version" value="2.0.Beta"/>
+  <property name="gemfirexd.native.version" value="1.0"/>
+  <property name="GFXDreleaseTag.name" value="GFXDRelease10"/>
+  <property name="gemfirexd.product.formalname" value="Pivotal_GemFireXD"/>
+  
+  <propertyregex property="gfxdversion"
+                   input="${gemfirexd.version}"
+                   regexp="\."
+                   replace=""/>
+  
+<!-- include external xml files here -->
+  <import file="buildfiles/gemfirexd_javadocs.xml"/>
+<!-- end of include section -->
+
+<!-- Begin public targets -->
+<target name="gfxd-precheckin"
+  depends="update-git, gfxd-clean, clean, build-all-gfe, gfxd-clean, gfxd-build-all-sanity, gfxd-run-all-tests"/>
+<target name="gfxd-precheckin-parallel"
+  depends="update-git, gfxd-clean, clean, build-all-gfe, gfxd-clean, gfxd-build-all-sanity, gfxd-run-precheckin-tests-parallel"/>
+<target name="gfxd-precheckin64-parallel"
+  depends="update-git, gfxd-clean, clean, build-all-gfe, gfxd-clean, gfxd-build-all-sanity, gfxd-run-precheckin-tests64-parallel"/>
+
+<target name="gfxd-build-all-cc" depends="-gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools, gfxd-compile-all-tests, gfxd-compile-examples"/>
+<target name="gfxd-build-all" depends="gfxd-build-product, gfxd-compile-all-tests, gfxd-compile-examples"/>
+<!--target name="gfxd-build-all-sanity" depends="gfxd-insane-build-product, gfxd-sane-clean, gfxd-build-all, gfxd-build-odbc64-install"/-->
+<!-- skipping insane build since it is not used or shipped currently -->
+<target name="gfxd-build-all-sanity" depends="gfxd-build-all"/>
+<target name="gfxd-build-product" depends="-gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools, gfxd-compile-hibernate"/>
+<target name="gfxd-build-java-product" depends="-gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools"/>
+<target name="gfxd-internal-build-product" depends="-gfxd-internal-build-product"/>
+<target name="gfxd-build-installer" depends="-gfxd-internal-build-installer"/>
+<target name="gfxd-build-vf-dist" depends="-gfxd-internal-build-vf-dist"/>
+<target name="gfxd-build-zip-dist" depends="-gfxd-internal-build-zip-dist"/>
+<target name="gfxd-build-rpms" depends="-gfxd-internal-build-rpms"/>
+<target name="gfxd-build-deb-dist" depends="-gfxd-internal-build-deb-dist"/>
+<target name="gfxd-inc-build" depends="-gfxd-internal-core-build, -gfxd-internal-unsealed-jar,-gfxd-internal-pack-product"/>
+<target name="gfxd-compile-tests" depends="compile-tests, -gfxd-internal-compile-tests"/>
+<target name="gfxd-compile-all-tests" depends="compile-tests, -compile-tests-pass2, -derby-testing, -gfxd-internal-compile-tests"/>
+<target name="gfxd-compile-examples" depends="-gfxd-internal-compile-examples"/>
+<target name="gfxd-compile-hibernate" depends="-hibernate-dialect-internal-compile"/>
+<target name="gfxd-rebuild-shared-library" depends="gfxd-props, gfxd-clean-native-library, -gfxd-rebuild-shared-library, gfxd-pack-shared-library"/>
+<target name="gfxd-run-all-tests" depends="gfxd-run-harness-tests, gfxd-parallel-junit, gfxd-run-dunit-tests, gfxd-run-integration-dunit-tests, gfxd-run-wan-dunit-tests, gfxd-run-smoke-tests, gfxd-run-backcomp-dunit-tests"/>
+<!-- SB: target name="gfxd-run-all-tests" depends="gfxd-run-harness-tests, gfxd-run-junit-tests, gfxd-run-dunit-tests, gfxd-run-integration-dunit-tests, gfxd-run-wan-dunit-tests, gfxd-run-adonet-tests-only, gfxd-run-smoke-tests"/-->
+<target name="gfxd-run-all-tests64" depends="gfxd-run-harness-tests64, gfxd-parallel-junit64, gfxd-run-dunit-tests64, gfxd-run-integration-dunit-tests64, gfxd-run-wan-dunit-tests64, gfxd-run-smoke-tests64, gfxd-run-backcomp-dunit-tests64"/>
+<target name="gfxd-run-all-tests-parallel" depends="gfxd-run-harness-tests, gfxd-parallel-junit, gfxd-run-all-dunit-tests-parallel, gfxd-run-smoke-tests"/>
+<target name="gfxd-run-all-tests64-parallel" depends="gfxd-run-harness-tests64, gfxd-parallel-junit64, gfxd-run-all-dunit-tests64-parallel, gfxd-run-smoke-tests64"/>
+<target name="gfxd-run-all-tests-nowan-parallel" depends="gfxd-run-harness-tests, gfxd-parallel-junit, gfxd-run-all-dunit-tests-nowan-parallel, gfxd-run-smoke-tests"/>
+<target name="gfxd-run-all-tests64-nowan-parallel" depends="gfxd-run-harness-tests64, gfxd-parallel-junit64, gfxd-run-all-dunit-tests64-nowan-parallel, gfxd-run-smoke-tests64"/>
+<target name="gfxd-run-junit-tests" depends="-derby-junit-all, -gfxd-internal-run-junit-tests"/>
+<target name="gfxd-run-junit-tests64" depends="-derby-junit-all64, -gfxd-internal-run-junit-tests64"/>
+<target name="gfxd-parallel-junit" depends="-derby-junit-all, gfxd-run-parallel-junit-tests"/>
+<target name="gfxd-parallel-junit64" depends="-derby-junit-all64, gfxd-run-parallel-junit-tests64"/>
+<target name="gfxd-run-derby-junit-tests" depends="-derby-junit-all"/>
+<target name="gfxd-run-derby-junit-tests64" depends="-derby-junit-all64"/>
+<target name="gfxd-run-qa-derby-tests" depends="-derby-qa-run-all"/>
+<target name="gfxd-run-report-qa-derby-tests" depends="-derby-qa-run-report-all"/>
+<target name="gfxd-report-qa-derby-tests" depends="-derby-qa-report-all"/>
+<target name="gfxd-run-gemfirexd-junit-tests" depends="-gfxd-internal-run-junit-tests"/>
+<target name="gfxd-run-gemfirexd-junit-tests64" depends="-gfxd-internal-run-junit-tests64"/>
+<target name="gfxd-run-dunit-tests" depends="-gfxd-internal-run-dunit-tests"/>
+<target name="gfxd-run-dunit-tests64" depends="-gfxd-internal-run-dunit-tests64"/>
+<target name="gfxd-run-backcomp-dunit-tests" depends="-gfxd-internal-run-backcomp-dunit-tests"/>
+<target name="gfxd-run-backcomp-dunit-tests64" depends="-gfxd-internal-run-backcomp-dunit-tests64"/>
+<target name="gfxd-run-integration-dunit-tests" depends="-gfxd-internal-run-integration-dunit-tests"/>
+<target name="gfxd-run-integration-dunit-tests64" depends="-gfxd-internal-run-integration-dunit-tests64"/>
+<target name="gfxd-run-wan-dunit-tests" depends="-gfxd-internal-run-wan-dunit-tests"/>
+<target name="gfxd-run-wan-dunit-tests64" depends="-gfxd-internal-run-wan-dunit-tests64"/>
+<target name="gfxd-run-smoke-tests" depends="-gfxd-internal-run-smoke-tests"/>
+<target name="gfxd-run-smoke-tests64" depends="-gfxd-internal-run-smoke-tests64"/>
+<target name="gfxd-run-one-harness-test" depends="-derby-run-harness-test"/>
+<target name="gfxd-run-harness-tests" depends="-derby-run-harness-tests"/>
+<target name="gfxd-run-harness-tests64" depends="-derby-run-harness-tests64"/>
+<target name="gfxd-build-ddlutils" depends="-gfxd-build-ddlutils"/>
+<target name="gfxd-invoke-derby-target" depends="-gfxd-props">
+  <derbyTarget target="${derby.target}"/>
+</target>
+
+<target name="gfxd-run-hdfs-tests" depends="run-hdfs-tests,-gfxd-internal-run-hdfs-dunit-tests,-gfxd-internal-run-hdfs-junit-tests"/>
+
+<target name="gfxd-clean">
+  <antcall target="-gfxd-insane-clean"/>
+  <antcall target="-gfxd-sane-clean"/>
+  <antcall target="-gfxd-clean-misc"/>
+</target>
+
+<target name="gfxd-insane-clean">
+  <antcall target="-gfxd-insane-clean"/>
+  <delete dir="${generated.ant.properties}" quiet="true"/>
+</target>
+
+<target name="gfxd-sane-clean">
+  <antcall target="-gfxd-sane-clean"/>
+  <delete dir="${generated.ant.properties}" quiet="true"/>
+</target>
+
+<target name="gfxd-clean-tests" depends="-gfxd-props, gfxd-clean-versioned-tests">
+  <derbyTarget target="junit-clean"/>
+  <delete dir="${gemfirexd.tests.classes.dir}" quiet="true"/>
+</target>
+
+<target name="gfxd-insane-build-product">
+  <antcall target="gfxd-build-java-product">
+    <param name="derby.sanity" value="false"/>
+  </antcall>
+</target>
+
+<target name="gfxd-sane-build-product">
+  <antcall target="gfxd-build-java-product">
+    <param name="derby.sanity" value="true"/>
+  </antcall>
+</target>
+
+<target name="-gfxd-build-ddlutils" depends="-gfxd-props, -gfxd-build-product">
+ <copy preservelastmodified="true" todir="${gemfirexd.ddlutils.dir}/lib">
+    <fileset dir="${gemfirexd.product.dir}/lib">
+          <include name="gemfirexd-client.jar"/>
+          <include name="gemfirexd.jar"/>
+    </fileset>
+  </copy>
+
+  <ant antfile="${gemfirexd.ddlutils.dir}/build.xml" target="dist" inheritall="false"/>
+  <!-- reorganize things a bit (bug #43963) -->
+  <delete dir="${gemfirexd.ddlutils.dist.dir}" quiet="true"/>
+  <mkdir dir="${gemfirexd.ddlutils.dist.dir}"/>
+  <unzip src="${gemfirexd.ddlutils.dir}/dist/${ddlutils.bin.zip}" dest="${gemfirexd.ddlutils.dist.dir}"/>
+  <!-- copy examples -->
+  <copy todir="${gemfirexd.ddlutils.dist.dir}/example">
+    <fileset dir="${gemfirexd.ddlutils.dir}/example">
+      <exclude name="**/.svn/**"/>
+    </fileset>
+  </copy>
+  <!-- copy full source and docs zip having GemFireXD customized code -->
+  <copy file="${gemfirexd.ddlutils.dir}/dist/${ddlutils.src.zip}" todir="${gemfirexd.ddlutils.dist.dir}"/>
+  <copy file="${gemfirexd.ddlutils.dir}/dist/${ddlutils.doc.zip}" todir="${gemfirexd.ddlutils.dist.dir}"/>
+  <mkdir dir="${gemfirexd.ddlutils.dist.dir}/ant"/>
+  <copy file="${ant.home}/lib/ant.jar"
+        tofile="${gemfirexd.ddlutils.dist.dir}/ant/ant.jar"
+        overwrite="true"/>
+  <delete dir="${gemfirexd.product.dir}/lib/ddlutils" failonerror="false"/>
+  <move file="${gemfirexd.ddlutils.dir}/dist/ddlutils" todir="${gemfirexd.product.dir}/lib"/>
+</target>
+
+
+<!-- end public targets -->
+
+<!-- greplogs support -->
+<property name="threshold.gfxd.dunit" value="0"/>
+<property name="threshold.gfxd.junit" value="0"/>
+<property name="threshold.gfxd.smoke" value="5000"/>
+
+<!-- end greplogs support -->
+
+<!-- Begin macrodefs -->
+<target name="-define-gfxd-macros"
+        unless="define-gfxd-macros.done">
+  <description>Define all gfxd macros in this target.</description>
+  <property name="define-gfxd-macros.done" value="true"/>
+  <macrodef name="derbyTarget">
+    <attribute name="target" default="NOT SET"/>
+    <attribute name="antargs" default="-Ddummy=true"/>
+    <sequential>
+      <property name="generated.ant.properties" value="${osbuild.dir}/tmp_${host.name}"/>
+      <antcall target="-gen-ant-properties"/>
+      <derbyTargetNoAntProperties target="@{target}" antargs="@{antargs}"/>
+     <!-- <delete dir="${generated.ant.properties}" quiet="true"/>-->
+    </sequential>
+  </macrodef>
+
+  <macrodef name="derbyTargetNoAntProperties">
+    <attribute name="target" default="NOT SET"/>
+    <attribute name="antargs" default="-Ddummy=true"/>
+    <sequential>
+      <!-- On windows call ant.bat and omit the "noconfig",
+           On everything else use "ant"-->
+      <conditional if="isWindows">
+        <property name="ant.noconfig" value="-Ddummy=1"/>
+      </conditional>
+      <property name="ant.noconfig" value="--noconfig"/>
+
+      <exec executable="${ant.home}/bin/ant${bat}" dir="${derby.src}" failonerror="true" failifexecutionfails="true">
+        <env key="JAVA_HOME" value="${javac.primary}"/>
+        <env key="CLASSPATH" value="${derby.test.classpath}"/>
+        <env key="ANT_OPTS" value="${ant.opts}"/>
+        <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+        <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+        <env key="TEST_MODE_NON_TX" value="${test-mode-non-tx}"/>
+        <!-- -emacs here to benefit ide/editors that parse output with regexs (e.g. Xcode, emacs, vi).
+             See http://ant.apache.org/faq.html#emacs-mode
+             Ideally this should instead be propagated from cmd line args passed into build.sh -->
+        <arg value="-emacs"/>
+        <arg value="${ant.noconfig}"/>
+        <arg value="-Dbuild.properties=${generated.ant.properties}/ant.properties"/>
+        <arg value="-Dgemfirexd.out.dir=${gemfirexd.out.dir}"/>
+        <arg value="-Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+        <arg value="-Dhttp.proxyHost=${http.proxyHost}"/>
+        <arg value="-Dhttp.proxyPort=${http.proxyPort}"/>
+        <!-- allow building in background that gets stuck due to jline usage of ij -->
+        <arg value="-Djline.terminal=scala.tools.jline.UnsupportedTerminal"/>
+        <arg line="@{target}"/>
+        <arg value="@{antargs}"/>
+      </exec>
+      <!--delete dir="${generated.ant.properties}" quiet="true"/-->
+    </sequential>
+  </macrodef>
+
+  <macrodef name="create-gemfire-properties">
+    <attribute name="dir" default="NOT SET"/>
+    <attribute name="logLevel" default="${logLevel}"/>
+    <sequential>
+      <taskdef classname="com.gemstone.gemfire.internal.AvailablePortTask"
+               classpath="${gemfirexd.unsealed.jar}" name="available-port"/>
+      <available-port portProperty="derby.test.mcast.port" protocol="socket"/>
+      <!-- logLevel comes from build.xml#props -->
+      <echo file="@{dir}/gemfire.properties" level="info">
+mcast-port=${derby.test.mcast.port}
+log-level=@{logLevel}
+      </echo>
+    </sequential>
+  </macrodef>
+</target>
+<!-- end macrodefs -->
+
+<!-- All targets below here are private and for internal build use only -->
+
+<target name="-gfxd-insane-clean">
+  <antcall target="-gfxd-clean">
+    <param name="derby.sanity" value="false"/>
+  </antcall>
+</target>
+
+<target name="-gfxd-sane-clean">
+  <antcall target="-gfxd-clean">
+    <param name="derby.sanity" value="true"/>
+  </antcall>
+</target>
+
+<target name="-gfxd-clean" depends="-gfxd-props, gfxd-clean-tests">
+  <derbyTargetNoAntProperties target="clobber" antargs="-Dsane=${derby.sanity} -Dsanity=${derby.sanity}"/>
+  <derbyTargetNoAntProperties target="cleanjars" antargs="-Dsane=${derby.sanity} -Dsanity=${derby.sanity}"/>
+  <derbyTargetNoAntProperties target="junit-clean" antargs="-Dsane=${derby.sanity} -Dsanity=${derby.sanity}"/>
+  <delete file="${derby.src}/tools/java/junit.jar" quiet="true"/>
+  <delete file="${gemfirexd.jar}" quiet="true"/>
+  <delete file="${gemfirexd.unsealed.jar}" quiet="true"/>
+  <delete file="${gemfirexd-client.jar}"/>
+  <delete file="${gemfirexdclient_nojni.jar}"/>
+  <delete file="${gemfirexd-tools.jar}"/>
+  <delete file="${gemfirexd.hibernate.dialect.jar}"/>
+</target>
+
+<target name="-gfxd-clean-misc" depends="-gfxd-props">
+  <ant antfile="${gemfirexd.ddlutils.dir}/build.xml" target="clean" inheritall="false"/>
+  <delete dir="${generated.ant.properties}" quiet="true"/>
+  <delete dir="${gemfirexd.docs.dir}" quiet="true"/>
+  <delete dir="${gemfirexd.ado.out.dir}" quiet="true"/>
+  <delete dir="${gemfirexd.odbc.out.dir}" quiet="true"/>
+  <delete dir="${gemfirexd.out.dir}/integration" quiet="true"/>
+</target>
+
+<target name="-gfxd-build-product" depends="build-product-nodocs, -gfxd-internal-build-product"/>
+
+<target name="gfxd-props" depends="-gfxd-props"/>
+
+<target name="-gfxd-props" depends="props, -define-gfxd-macros">
+
+  <!-- Set product property for determining which product. -->
+  <property name="product" value="gemfirexd"/>
+
+  <property name="derby.src" value="${basedir}/gemfirexd"/>
+  <!-- gemfirexd.version is defined by release.properties -->
+  <property file="${derby.src}/tools/ant/properties/release.properties"
+            prefix="gemfirexd."/>
+  <property name="derby.sanity" value="true"/>
+
+  <if>
+    <istrue value="${derby.sanity}"/>
+    <then>
+      <property name="derby.sanity.name" value="sane"/>
+    </then>
+    <else>
+      <property name="derby.sanity.name" value="insane"/>
+    </else>
+  </if>
+
+  <property name="gemfirexd.out.dir" value="${osbuild.dir}/gemfirexd"/>
+  <property name="gemfirexd.product.dir" value="${osbuild.dir}/product-gfxd"/>
+  <property name="gemfirexd.product.lib.dir" value="${gemfirexd.product.dir}/lib"/>
+  <property name="gemfirexd.docs.dir" value="${gemfirexd.out.dir}/javadocs"/>
+  <property name="derby.test.results.dir" value="${tests.results.dir}/derby-harness-tests"/>
+  <property name="derby.test.results64.dir" value="${tests.results64.dir}/derby-harness-tests"/>
+  <property name="derby.xml.reports.dir" value="${tests.results.dir}/derby-harness-tests/xml-reports"/>
+  <property name="derby.xml.reports64.dir" value="${tests.results64.dir}/derby-harness-tests/xml-reports"/>
+  <property name="gemfirexd.tests.src.dir" value="${derby.src}/GemFireXDTests"/>
+  <property name="gemfirexd.packaging.dir" value="${derby.src}/GemFireXDPackaging"/>
+  <property name="gemfirexd.examples.src.dir" value="${gemfirexd.packaging.dir}/examples"/>
+  <property name="gemfirexd.tests.classes.dir" value="${osbuild.dir}/GemFireXDTests/classes"/>
+  <property name="gemfirexd.callbacks.src.dir" value="${derby.src}/java/engine/com/pivotal/gemfirexd/callbacks"/>
+  <property name="gemfirexd.callbacks.product.dir" value="${gemfirexd.product.dir}/examples/storedprocedure/com/pivotal/gemfirexd/callbacks"/>
+  <property name="gemfirexd.ddlutils.dir" value="${derby.src}/java/ddlutils"/>
+  <property name="gemfirexd.ddlutils.dist.dir" value="${derby.src}/java/ddlutils/dist/ddlutils"/>
+  <property name="gemfirexd.ddlutils.classes.dir" value="${derby.src}/java/ddlutils/target/classes"/>
+  <property name="gemfirexd.ddlutils.lib.dir" value="${derby.src}/java/ddlutils/lib"/>
+  <property name="gemfirexd.examples.classes.dir" value="${gemfirexd.tests.classes.dir}/examples"/>
+
+  <echo message="derby.sanity  = ${derby.sanity}" level="info"/>
+  <echo message="gemfirexd.out.dir = ${gemfirexd.out.dir}" level="info"/>
+
+  <property name="gemfirexd.jar" value="${gemfirexd.product.lib.dir}/gemfirexd.jar"/>
+  <property name="gemfirexd-tools.jar" value="${gemfirexd.product.lib.dir}/gemfirexd-tools.jar"/>
+  <property name="gemfirexd-client.jar" value="${gemfirexd.product.lib.dir}/gemfirexd-client.jar"/>
+  <property name="gemfirexdclient_nojni.jar" value="${hiddenlib.dir}/gemfirexdclient_nojni.jar"/>
+  <property name="gemfirexd.unsealed.jar" value="${hiddenlib.dir}/gemfirexd_unsealed.jar"/>
+  <property name="ddlutils.bin.jar" value="DdlUtils-1.0.jar"/>
+  <property name="ddlutils.bin.zip" value="DdlUtils-1.0-bin.zip"/>
+  <property name="ddlutils.doc.zip" value="DdlUtils-1.0-doc.zip"/>
+  <property name="ddlutils.src.zip" value="DdlUtils-1.0-src.zip"/>
+  <property name="javatools.dir" value="${derby.src}/tools/java"/>
+ 
+  <property name="derby.jar.dir" value="${gemfirexd.out.dir}/jars/${derby.sanity.name}"/>
+  <property name="derbyTesting.jar" value="${gemfirexd.out.dir}/jars/${derby.sanity.name}/derbyTesting.jar"/>
+  <property name="jline.jar" value="${javatools.dir}/${jline.jar.name}"/>
+  <property name="commons-dbcp.jar" value="${gemfirexd.ddlutils.dir}/lib/${commons-dbcp.jar.name}"/>
+  <property name="thrift.jar" value="${javatools.dir}/${thrift.jar.name}"/>
+  <property name="pxf.jar" value="${derby.src}/integration/pxf/${pxf.jar.name}" />
+
+  <property name="gfxd.smoketest.bt" value="${tests.classes.dir}/smoketest/gfxd-smoketest.bt"/>
+
+  <!-- dependencies for backward compatibility tests -->
+  <getdependency name="gemfirexd100" type="dir" location="where/sqlfire/100" forClasspath="false"/>
+  <getdependency name="gemfirexd101" type="dir" location="where/sqlfire/101" forClasspath="false"/>
+  <getdependency name="gemfirexd102" type="dir" location="where/sqlfire/102" forClasspath="false"/>
+
+  <!-- properties for ADO.NET/ODBC (and anything else that is .NET or ODBC) -->
+
+  <property name="gemfirexd.csproj.dir" value="${basedir}/ide/gfxd-csharp.vsproj"/>
+  <property name="gemfirexd.ado.out.dir" value="${gemfirexd.out.dir}/ado-drivers"/>
+  <property name="gemfirexd.designer.dir" value="${gemfirexd.product.dir}/adonet/GemFireXDDesigner"/>
+  <property name="gemfirexd.ado.product.dir" value="${gemfirexd.product.dir}/dotnet"/>
+  <property name="gemfirexd.ado.src.dir" value="${derby.src}/csharp"/>
+  <property name="gemfirexd.ado.tests.src.dir" value="${gemfirexd.tests.src.dir}/csharp/ado-tests"/>
+  <property name="gemfirexd.ado.tests.runner" value="${gemfirexd.ado.out.dir}/runCSTests.sh"/>
+  <property name="gemfirexdclient.dllname" value="gemfirexdclient"/>
+  <property name="gemfirexdclient.dll" value="${gemfirexd.ado.out.dir}/${gemfirexdclient.dllname}.dll"/>
+  <property name="gemfirexd.odbc.out.dir" value="${gemfirexd.out.dir}/odbc"/>
+  <property name="gemfirexd.odbc.tests.src.dir" value="${gemfirexd.tests.src.dir}/odbc"/>
+  <property name="gemfirexd.odbc.tests.out.dir" value="${osbuild.dir}/GemFireXDTests/odbc"/>
+  <property name="gemfirexd.odbc.fwk.dir" value="${gcm.dir}/where/cplusplus/odbc_framework/${gf.os}"/>
+  <property name="gemfirexd.odbc.fwkresults.dir" value="${gemfirexd.odbc.tests.out.dir}/results/fwk"/>
+  <property name="gemfirexd.odbc.testrun" value="false"/>
+  <property name="gfxd.odbc.progresstest" value="false"/>
+  <property name="gfxd.odbcfwktest.iteration" value="1"/>
+
+  <getdependency name="gfxd.msi.designer.dir" type="dir" location="where/java/sqlfireDesigner/110" forClasspath="false"/>
+
+  <getdependency name="ikvm.dir" type="dir" location="where/csharp/ikvm-${ikvm.version}" forClasspath="false"/>
+  <getdependency name="nunit.dir" type="dir" location="where/csharp/nunit-${nunit.version}" forClasspath="false"/>
+  <getdependency name="mono.dir" type="dir" location="where/csharp/mono-${mono.version}" forClasspath="false"/>
+  
+  <property name="acelinkname" value="ACE.6.1.0" />
+
+  <conditional if="isWindows" unless="msbuild.skip">
+    <property name="gfxd.build.csharp" value="msbuild.exe"/>
+    <property name="mono.exe" value=""/>
+    <property name="ikvmc.exe" value="${ikvm.dir}/bin/ikvmc.exe"/>
+    <property name="ikvmc.pre" value=""/>
+    <property name="gfxd.build.odbc" value="true"/>
+  </conditional>
+  <conditional if="myenv.XBUILD" unless="msbuild.skip">
+    <property name="gfxd.build.csharp" value="${myenv.XBUILD}"/>
+    <property name="mono.exe" value="${myenv.MONO}"/>
+    <property name="ikvmc.exe" value="${mono.exe}"/>
+    <property name="ikvmc.pre" value="${ikvm.dir}/bin/ikvmc.exe"/>
+  </conditional>
+  <conditional if="isLinux">
+    <property name="gfxd.build.odbc" value="true"/>
+  </conditional>
+
+  <!-- end properties for ADO.NET/ODBC build -->
+
+  <path id="gemfirexd.tests.compile.classpath">
+    <pathelement location="${tests.out.dir}/classes/junit.jar"/>
+    <pathelement location="${tests.classes.dir}"/>
+    <pathelement location="${javac.primary}/lib/tools.jar"/>
+    <pathelement location="${gemfirexd.unsealed.jar}"/>
+    <pathelement location="${gemfirexd.jar}"/>
+    <pathelement location="${gemfirexd-client.jar}"/>
+    <pathelement location="${gemfirexd-tools.jar}"/>
+    <pathelement location="${gemfirexd.ddlutils.classes.dir}"/>
+    <pathelement location="${commons-cli.jar}"/>
+    <pathelement location="${commons-io.jar}"/>
+    <pathelement location="${derbyTesting.jar}"/>
+    <pathelement location="${ant.core.lib}"/>
+    <pathelement location="${derbynet.jar}"/>
+    <pathelement location="${derbytools.jar}"/>
+    <pathelement location="${tests.lib.dir}/c3p0-0.9.5-pre6.jar"/>
+    <pathelement location="${tests.lib.dir}/commons-dbcp-1.4.jar"/>
+    <pathelement location="${tests.lib.dir}/tomcat-jdbc.jar"/>
+    <pathelement location="${findbugs-annotations.jar}"/>
+    <path refid="hadoop.classpath"/>
+    <pathelement location="${json-simple.jar}"/>
+    <pathelement location="${pxf.jar}"/>
+    <fileset dir="${gemfirexd.ddlutils.lib.dir}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="gemfirexd.integration.tests.compile.classpath">
+    <fileset dir="${hibernate.414.dir}">
+      <include name="*.jar"/>
+    </fileset>
+    <pathelement location="${tests.out.dir}/classes/junit.jar"/>
+    <pathelement location="${tests.classes.dir}"/>
+    <pathelement location="${osbuild.dir}/GemFireXDTests/classes"/>
+    <pathelement location="${gemfirexd.tests.src.dir}/integration/hibernate"/>
+    <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+    <pathelement location="${gemfirexd-client.jar}"/>
+    <pathelement location="${gemfirexd.hibernate.dialect.jar}"/>
+    <pathelement location="${findbugs-annotations.jar}"/>
+  </path>
+
+  <path id="gemfirexd.examples.compile.classpath">
+    <pathelement location="${gemfirexd.unsealed.jar}"/>
+    <pathelement location="${gemfirexd.jar}"/>
+    <pathelement location="${ant.core.lib}"/>
+    <pathelement location="${findbugs-annotations.jar}"/>
+  </path>
+
+  <property name="derby.test.classpath" value="${derby.src}/tools/java/junit.jar${path.separator}${jline.jar}${path.separator}${derby.src}/tools/java/${jakarta-oro.jar.name}${path.separator}${gemfirexd.jar}${path.separator}${gemfirexd-tools.jar}${path.separator}${derbyTesting.jar}${path.separator}${gemfirexd-client.jar}${path.separator}${commons-cli.jar}${path.separator}${commons-dbcp.jar}${path.separator}${gemfirexd.ddlutils.classes.dir}${path.separator}${hadoop-mapreduce-client-core.jar}${path.separator}${hadoop-annotations.jar}${path.separator}${hadoop-auth.jar}${path.separator}${hadoop-common.jar}${path.separator}${hadoop-hdfs.jar}"/>
+
+  <!-- dependencies for hibernate dialect -->
+  <property name="gemfirexd.hibernate.dialect.jar" value="${hiddenlib.dir}/gfxdHibernateDialect.jar"/>
+  <property name="gemfirexd.hibernate.dialect.src.dir" value="${derby.src}/integration/hibernate"/>
+  <property name="gemfirexd.hibernate.dialect.build.dir" value="${gemfirexd.out.dir}/integration/hibernate"/>
+  <path id="gemfirexd.hibernate.compile.v3.classpath">
+    <pathelement location="${hibernate.332.jar}"/>
+    <pathelement location="${hibernate.401.jar}"/>
+  </path>
+  <path id="gemfirexd.hibernate.compile.v4.classpath">
+    <pathelement location="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin/gfxdBaseDialect.jar"/>
+    <pathelement location="${hibernate.401.jar}"/>
+  </path>
+
+  <!-- Packaging and Distribution Properties -->
+  <property name="gfxd.zip.prefix" value="gfxd_"/>
+  <property name="gfxd.odbc.prefix" value="gfxd_odbc"/>
+  <property name="gfxd_installer.dir" value="gfxd_installer"/>
+  <property name="gfxd_rpmbuild.dir" value="${gfxd_installer.dir}_rpmbuild"/>
+  <property name="gemfirexd.maven_dist.dir" value="${osbuild.dir}/gemfirexd_maven_dist"/>
+  <property name="prts.dist.tmp.dir" value="${osbuild.dir}/prts_dist_tmp"/>
+  <property name="gfxd_install.dir.name" value="${gemfirexd.product.formalname}_${gfxdversion}"/>
+
+  <!-- Set date in correct format for RPM -->
+  <tstamp>
+    <format property="rpm.date" pattern="EEE MMM dd yyyy"/>
+  </tstamp>
+
+</target>
+
+<target name="-gfxd-internal-build-product" depends="-gfxd-internal-jar, -gfxd-internal-unsealed-jar,-gfxd-internal-pack-product"/>
+
+<target name="test-pack" depends="-gfxd-internal-pack-product"/>
+
+<target name="gfxd-pack-windows-product" depends="-gfxd-internal-pack-product-windows"/>
+
+<target name="-gfxd-internal-pack-product-windows" depends="-gfxd-props">
+  <!-- This target is intended for sanctioned builds and takes a Linux product 
+  and removes Linux specific pieces and adds the windows specific parts -->
+
+  <!-- Remove Linux shared libraries -->
+  <delete file="${gemfirexd.product.lib.dir}/libgemfirexd.so" quiet="true"/>
+  <delete file="${gemfirexd.product.lib.dir}/libgemfirexd64.so" quiet="true"/>
+
+  <!-- SQLF:BComp -->
+  <copy preservelastmodified="true" file="${scripts.dir}/gfxd.bat"
+        tofile="${gemfirexd.product.dir}/bin/sqlf.bat" overwrite="true"/>
+
+  <!-- Copy .bat script files -->
+  <copy preservelastmodified="true" todir="${gemfirexd.product.dir}/bin">
+    <fileset dir="${scripts.dir}">
+      <include name="gfxd.bat"/>
+      <include name="dataextractor.bat"/>
+      <include name="dataextractloader.bat"/>
+    </fileset>
+  </copy>
+
+  <!-- Sweep bin to make sure execute is enabled  -->
+  <chmod perm="a+x">
+    <fileset dir="${gemfirexd.product.dir}/bin">
+      <include name="*"/>
+    </fileset>
+  </chmod>
+
+  <!-- fix text files to windows style -->
+  <fixcrlf srcdir="${gemfirexd.product.dir}" eol="crlf" eof="asis" encoding="ISO-8859-1">
+    <include name="**/*.bat" />
+    <include name="**/*.java" />
+    <include name="**/*.sql" />
+    <include name="**/*.txt" />
+    <include name="**/*.xml" />
+  </fixcrlf>
+
+</target>
+
+<target name="-gfxd-internal-pack-product" depends="-gfxd-props">
+  <!-- copy the what we need out of:
+       GemFire product tree
+       gemfirexd release/docfiles
+       external javadocs -->
+  
+  <copy preservelastmodified="true" todir="${gemfirexd.product.lib.dir}">
+    <fileset dir="${product.lib.dir}">
+      <include name="${commons-logging.jar.name}"/>
+      <include name="${commons-modeler.jar.name}"/>
+      <include name="${commons-io.jar.name}"/>
+      <include name="${jetty9-http.jar.name}"/>
+      <include name="${jetty9-io.jar.name}"/>
+      <include name="${jetty9-security.jar.name}"/>
+      <include name="${jetty9-server.jar.name}"/>
+      <include name="${jetty9-servlet.jar.name}"/>
+      <include name="${jetty9-servlet-api.jar.name}"/>
+      <include name="${jetty9-util.jar.name}"/>
+      <include name="${jetty9-webapp.jar.name}"/>
+      <include name="${jetty9-xml.jar.name}"/>
+      <include name="${mx4j-remote.jar.name}"/>
+      <include name="${mx4j-tools.jar.name}"/>
+      <include name="${mx4j.jar.name}"/>
+      <include name="${pulse-dependencies.jar.name}"/>
+      <include name="${slf4j-jdk14.jar.name}"/>
+      <include name="${jackson.jar.name}"/>
+    </fileset>
+  </copy>
+
+  <copySharedLib todir="${gemfirexd.product.lib.dir}"/>
+  <copySharedLib todir="${hiddenlib.dir}"/>
+
+  <copy preservelastmodified="true" todir="${gemfirexd.product.dir}">
+    <fileset dir="${gemfirexd.packaging.dir}">
+      <include name="**"/>
+      <exclude name="**/.svn"/>
+      <exclude name="**/mapreduce/gemfirexd-mapreduce.*"/>
+    </fileset>
+  </copy>
+
+  <replace file="${gemfirexd.product.dir}/examples/mapreduce/README.txt"
+           token="__VERSION__"
+           value="${gemfirexd.version}"
+           summary="yes"/>
+
+  <replace file="${gemfirexd.product.dir}/examples/mapreduce/pom.xml"
+           token="__VERSION__"
+           value="${gemfirexd.version}"
+           summary="yes"/>
+
+  <!--GemFireXD create the external javadocs and copy -->
+  <antcall target="-gfxd-external-javadocs"/>
+  <copy preservelastmodified="true" todir="${gemfirexd.product.dir}">
+    <fileset dir="${gemfirexd.docs.dir}/external">
+      <include name="docs/**"/>
+    </fileset>
+  </copy>
+
+  <!-- copy the scripts and set execute permissions -->
+  <!-- skip .bat as those are now packed -gfxd-internal-pack-product-windows target -->
+  <copy preservelastmodified="true" todir="${gemfirexd.product.dir}/bin">
+    <fileset dir="${scripts.dir}">
+      <include name="gfxd"/>
+      <include name="color"/>
+      <include name="create_hdfsclient_dist.sh"/>
+      <include name="dataextractor"/>
+      <include name="dataextractloader"/>
+      <include name="gfxd-completion.bash"/>
+    </fileset>
+  </copy>
+
+  <!-- SQLF:BComp -->
+  <copy preservelastmodified="true" file="${scripts.dir}/gfxd"  
+        tofile="${gemfirexd.product.dir}/bin/sqlf" overwrite="true"/>
+
+  <chmod perm="a+x">
+    <fileset dir="${gemfirexd.product.dir}/bin">
+      <include name="*"/>
+      <exclude name="gfxd-completion.bash"/>
+    </fileset>
+  </chmod>
+
+  <!-- make special gfxd.bat available in hidden/bin in Linux snapshots for hydra -->
+  <mkdir dir="${hiddenbin.dir}"/>
+  <copy preservelastmodified="true" file="${scripts.dir}/hiddengfxd.bat"
+        tofile="${hiddenbin.dir}/gfxd.bat" overwrite="true"/>
+
+  <chmod perm="a+x">
+    <fileset dir="${hiddenbin.dir}">
+      <include name="*"/>
+    </fileset>
+  </chmod>
+
+  <!-- Add 3rd Party license file to product-->
+  <copy file="${basedir}/release/3rdparty_licenses/open_source_licenses-Pivotal_GemFireXD_1.4.1.txt"
+    todir="${gemfirexd.product.dir}/lib"/>
+
+  <path id="misc.docfiles">
+    <fileset id="misc.docfiles.1" dir="${basedir}/release/images" includes="GemFireXD_190x81.png"/>
+    <fileset id="misc.docfiles.2" dir="${basedir}/release/docfiles"
+    includes="copyright.html,support.html,DocIndex.css"/>
+  </path>
+
+  <copy preservelastmodified="true" overwrite="true" todir="${gemfirexd.product.dir}/docs">
+    <fileset refid="misc.docfiles.1"/>
+    <fileset refid="misc.docfiles.2"/>
+  </copy>
+
+  <copy file="${basedir}/release/docfiles/gfxd-index.html"
+    tofile="${gemfirexd.product.dir}/docs/index.html"/>
+
+  <copy file="${basedir}/release/installer/Pivotal_EULA.txt"
+    tofile="${gemfirexd.product.dir}/EULA.txt"/>
+
+  <mkdir dir="${gemfirexd.product.dir}/tools"/>
+  <copy todir="${gemfirexd.product.dir}/tools/vsd" preservelastmodified="true">
+    <fileset dir="${vsd.dir}"/>
+  </copy>
+
+  <chmod perm="a+x">
+    <fileset dir="${gemfirexd.product.dir}/tools/vsd">
+      <include name="bin/vsd*"/>
+    </fileset>
+  </chmod>
+
+  <!-- copy DBSynchronizer as an example -->
+  <!-- ensure that it uses only public API -->
+  <echo level="info" message=" checking for APIs in DBSynchronizer"/>
+  <mkdir dir="${gemfirexd.out.dir}/lists"/>
+  <java classname="org.apache.derbyBuild.classlister" fork="yes">
+    <jvmarg value="-Doutputfile=${gemfirexd.out.dir}/lists/public.list"/>
+    <jvmarg value="-Dverbose=false"/>
+    <jvmarg value="-DshowAll=false"/>
+    <jvmarg value="-DshowOne=true"/>
+    <jvmarg value="-DfirstLevelOnly=true"/>
+    <arg value="${derby.src}/java/engine/com/pivotal/gemfirexd/public.properties"/>
+    <classpath>
+      <pathelement path="${gemfirexd.out.dir}/classes"/>
+    </classpath>
+  </java>
+  <fail message="Non-public API detected in public example (see ${gemfirexd.out.dir}/lists/public.list)">
+    <condition>
+      <resourcecontains resource="${gemfirexd.out.dir}/lists/public.list" substring="internal"/>
+    </condition>
+  </fail>
+  <delete file="${gemfirexd.out.dir}/lists/public.list" quiet="true"/>
+
+
+  <mkdir dir="${gemfirexd.callbacks.product.dir}"/>
+  <copy file="${gemfirexd.callbacks.src.dir}/DBSynchronizer.java"
+    tofile="${gemfirexd.callbacks.product.dir}/DBSynchronizer.java"/>
+  <copy file="${gemfirexd.callbacks.src.dir}/AsyncEventHelper.java"
+    tofile="${gemfirexd.callbacks.product.dir}/AsyncEventHelper.java"/>
+
+  <!-- pack windows specific targets -->
+  <conditional if="isWindows">
+    <antcall target="-gfxd-internal-pack-product-windows"/>
+  </conditional>
+</target>
+
+<target depends="-gfxd-props" name="gfxd-import-docs">
+  <description>Checks out gemfireDocs from that repository.</description>
+  <delete dir="${build.dir}/packDocs" quiet="true"/>
+  <property name="svndocs.info.logfile" value="svn-docs-info.log"/>
+  <delete file="${svndocs.info.logfile}" quiet="true"/>
+  <echo message="Exporting the following revision from gemfireDocs repository"/>
+  <echo message="" level="info"/>
+  <exec executable="svn" failonerror="false" output="${svndocs.info.logfile}">
+    <arg value="info"/>
+    <arg value="https://svn.gemstone.com/repos/gemfiredocs/tags/releasedDocs/${GFXDreleaseTag.name}"/>
+  </exec>
+  <concat>
+    <fileset dir="." includes="${svndocs.info.logfile}"/>
+  </concat>
+  <property name="docs.logfile" value="svn-docs.log"/>
+  <echo message="" level="info"/>
+  <exec executable="svn" failonerror="true" output="${docs.logfile}">
+    <arg value="export"/>
+    <arg value="https://svn.gemstone.com/repos/gemfiredocs/tags/releasedDocs/${GFXDreleaseTag.name}"/>
+    <arg value="${build.dir}/packDocs"/>
+  </exec>
+  <delete dir="${gemfirexd.product.dir}/docs/pdf"/>
+  <delete dir="${gemfirexd.product.dir}/docs/html"/>
+</target>
+
+<target name="-gfxd-internal-jar" depends="-gfxd-props, build-product, -gfxd-internal-core-build"/>
+
+<target name="-gfxd-internal-core-build" depends="-gfxd-props">
+  <!-- need to have the junit.jar to run the testing target -->
+  <copy file="${junit.jar}"
+        tofile="${derby.src}/tools/java/junit.jar"/>
+  <derbyTarget target="buildsource buildjarsclean_gfxd"/>
+
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="${compile-gemfire.deprecation}" destdir="${gemfirexd.out.dir}/classes" includeAntRuntime="true" nowarn="off" optimize="off" srcdir="${basedir}/gemfirexd" verbose="off" encoding="UTF-8">
+    <include name="java/engine/com/pivotal/gemfirexd/internal/GemFireXDVersion.java"/>
+    <include name="java/engine/com/pivotal/pxf/**/*.java"/>
+    <include name="java/engine/com/pivotal/pxf/**/**/*.java"/>
+    <include name="java/engine/com/pivotal/gemfirexd/hadoop/**/*.java"/>
+    <classpath>
+      <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j-remote.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j-tools.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${commons-logging.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${commons-modeler.jar.name}"/>
+      <pathelement location="${findbugs-annotations.jar}"/>
+      <pathelement location="${pxf.jar}"/>
+      <pathelement location="${slf4j-api.jar}"/>
+      <pathelement location="${hadoop-common.jar}"/>
+      <pathelement location="${hadoop-mapreduce-client-core.jar}"/>
+    </classpath>
+  </javac>
+  <delete file="${gemfirexd.jar}" quiet="true"/>
+  <mkdir dir="${gemfirexd.product.dir}/lib"/>
+  <mkdir dir="${gemfirexd.product.dir}/ext-lib"/>
+
+  <generateVersionResourceFile 
+      resourcefile="GemFireXDVersion.properties"
+      resourcepath="com/pivotal/gemfirexd/internal"
+      productname="GemFireXD"
+      productversion="${gemfirexd.version}"
+      gemfireversion="${gemfire.version}"
+      classesdir="${gemfirexd.out.dir}/classes"/>
+
+  <echo level="info" message="copy EULA and open_source"/>
+  <copy file="${basedir}/release/3rdparty_licenses/open_source_licenses-Pivotal_GemFireXD_1.4.1.txt"
+      todir="${gemfirexd.out.dir}/classes"/>
+  <copy file="${basedir}/release/installer/Pivotal_EULA.txt" tofile="${gemfirexd.out.dir}/classes/EULA.txt"/>
+
+  <zip destfile="${gemfirexd.jar}" duplicate="preserve">
+    <zipfileset src="${product.lib.dir}/${gemfire.jar.name}">
+     <exclude name="com/gemstone/gemfire/internal/GemFireVersion.properties"/>
+     <exclude name="META-INF/**"/>
+     <exclude name="EULA.txt"/>
+     <exclude name="open_source_licenses**"/>
+     <exclude name="vfabric-about.properties"/>
+     <exclude name="licenses.zip"/>
+     <exclude name="default-eval-serial.txt"/>
+     <exclude name="cpuinfo-tool.exe.**"/>
+    </zipfileset>
+    <zipfileset dir="${basedir}/release/installer">
+      <include name="Pivotal_EULA.txt"/>
+    </zipfileset>
+    <zipfileset dir="${basedir}/release/3rdparty_licenses">
+      <include name="open_source_licenses-Pivotal_GemFireXD_1.4.1.txt"/>
+    </zipfileset>
+    <zipfileset src="${hbase.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${guava.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${jsr305.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${jna.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${derby.jar.dir}/derby.jar"/>
+    <zipfileset src="${derby.jar.dir}/derbynet.jar">
+     <exclude name="META-INF/**"/>
+     <exclude name="com/pivotal/gemfirexd/internal/impl/tools/sysinfo/Main*.class"/>
+     <exclude name="com/pivotal/gemfirexd/internal/impl/tools/sysinfo/ZipInfoProperties.class"/>
+     <exclude name="com/pivotal/gemfirexd/internal/loc/sysinfoMessages.properties"/>
+    </zipfileset>
+    <fileset dir="${gemfirexd.out.dir}/classes">
+      <include name="com/pivotal/gemfirexd/internal/GemFireXDVersion.properties"/>
+      <include name="com/pivotal/gemfirexd/internal/GemFireXDVersion.class"/>
+      <include name="com/pivotal/pxf/**/*.class"/>
+      <include name="com/pivotal/pxf/**/**/*.class"/>
+      <include name="com/pivotal/gemfirexd/hadoop/**/*.class"/>
+      <include name="com/pivotal/gemfirexd/internal/engine/hadoop/mapreduce/DumpHDFSData.class"/>
+    </fileset>
+    <!-- thrift dependencies -->
+    <zipfileset src="${thrift.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${slf4j-api.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${commons-lang.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+  </zip>
+
+  <zip destfile="${gemfirexdclient_nojni.jar}" duplicate="preserve">
+    <zipfileset src="${derby.jar.dir}/derbyclient.jar"/>
+    <fileset dir="${gemfirexd.out.dir}/classes">
+      <include name="com/pivotal/gemfirexd/internal/GemFireXDVersion.properties"/>
+      <include name="com/pivotal/gemfirexd/jdbc/ClientAttribute.class"/>
+    </fileset>
+    <!-- include the classes now shared from GemFire codebase but no JNA ones -->
+    <fileset dir="${classes.dir}">
+      <include name="com/gemstone/gemfire/internal/shared/*.class"/>
+      <include name="com/gemstone/gnu/trove/*.class"/>
+      <exclude name="com/gemstone/gemfire/internal/shared/*JNA*.class"/>
+      <exclude name="com/gemstone/gnu/trove/TObjectLongHash*.class"/>
+      <exclude name="com/gemstone/gnu/trove/TObjectLongIterator.class"/>
+    </fileset>
+    <!-- thrift dependencies -->
+    <zipfileset src="${thrift.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${slf4j-api.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${slf4j-jdk14.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${commons-lang.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+  </zip>
+
+  <zip destfile="${gemfirexd-client.jar}" duplicate="preserve">
+    <zipfileset src="${jna.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${derby.jar.dir}/derbyclient.jar"/>
+    <fileset dir="${gemfirexd.out.dir}/classes">
+      <include name="com/pivotal/gemfirexd/internal/GemFireXDVersion.properties"/>
+      <include name="com/pivotal/gemfirexd/jdbc/ClientAttribute.class"/>
+    </fileset>
+    <!-- include the classes now shared from GemFire codebase -->
+    <fileset dir="${classes.dir}">
+      <include name="com/gemstone/gemfire/internal/shared/*.class"/>
+      <include name="com/gemstone/gnu/trove/*.class"/>
+    </fileset>
+    <!-- thrift dependencies -->
+    <zipfileset src="${thrift.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${slf4j-api.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${slf4j-jdk14.jar}">
+      <exclude name="META-INF/**"/>
+    </zipfileset>
+    <zipfileset src="${commons-lang.jar}">
+     <exclude name="META-INF/**"/>
+    </zipfileset>
+  </zip>
+</target>
+
+<target name="generate-gfxd-eclipse-resources" depends="generate-eclipse-resources, -gfxd-props">
+
+  <generateVersionResourceFile
+      resourcefile="GemFireXDVersion.properties"
+      resourcepath="com/pivotal/gemfirexd/internal"
+      productname="GemFireXD"
+      productversion="${gemfirexd.version}"
+      gemfireversion="${gemfire.version}"
+      classesdir="${gemfirexd.out.dir}/classes"/>
+</target>
+
+<target name="-gfxd-build-tools" depends="-gfxd-props">
+  <derbyTarget target="tools_last derbytoolsjar_gfxd"/>
+
+  <copy file="${derby.jar.dir}/derbytools.jar"
+        tofile="${gemfirexd-tools.jar}"
+        overwrite="true"/>
+  <copy file="${jline.jar}"
+        tofile="${gemfirexd.product.dir}/lib/${jline.jar.name}"
+        overwrite="true"/>
+  <copy file="${commons-cli.jar}"
+        tofile="${gemfirexd.product.dir}/lib/${commons-cli.jar.name}"
+        overwrite="true"/>
+</target>
+
+<target name="-gfxd-internal-unsealed-jar" depends="-gfxd-props">
+  <property name="gemfirexd.jar.tmpdir" value="${osbuild.dir}/jar_tmp"/>
+  <delete file="${gemfirexd.unsealed.jar}" quiet="true"/>
+  <unjar src="${gemfirexd.jar}" dest="${gemfirexd.jar.tmpdir}">
+    <patternset includes="META-INF/MANIFEST.MF"/>
+  </unjar>
+  <replace file="${gemfirexd.jar.tmpdir}/META-INF/MANIFEST.MF"
+    token="Sealed: true" value="Sealed: false"/>
+  <jar destfile="${gemfirexd.unsealed.jar}"
+       basedir="${gemfirexd.jar.tmpdir}"
+       manifest="${gemfirexd.jar.tmpdir}/META-INF/MANIFEST.MF">
+    <zipfileset src="${gemfirexd.jar}" excludes="META-INF/MANIFEST.MF"/>
+    <fileset dir="${gemfirexd.jar.tmpdir}" includes="META-INF/MANIFEST.MF"/>
+  </jar>
+  <delete file="${gemfirexd.jar.tmpdir}" quiet="true"/>
+</target>
+
+<target name="-compile-tests-pass2"
+        depends="-compile-tests-pass3,
+                 -gfxd-compile-versioned-tests"
+        description="Compiles all the test code for GemFire"/>
+
+<target name="-compile-tests-pass3"
+        depends="-gfxd-props, compile-tests">
+  <description>Compiles the GemFireXD test code that lives in the
+               GemFire test tree.</description>
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="off" destdir="${tests.classes.dir}" includeAntRuntime="false" nowarn="off" optimize="off" encoding="UTF-8">
+    <src path="${tests.src.dir}"/>
+    <classpath refid="gemfirexd.tests.compile.classpath"/>
+    <include name="hydra/gemfirexd/**"/>
+    <include name="hydraconfig/gemfirexd/**"/>
+    <include name="hydratest/version/gemfirexd/**"/>
+    <include name="sql/**/*.java"/>
+    <include name="gfxdperf/**/*.java"/>
+    <include name="cacheperf/comparisons/gemfirexd/**/*.java"/>
+    <include name="cacheperf/poc/hitachi/*.java"/>
+    <include name="objects/query/largeobject/**"/>
+    <include name="objects/query/sector/**"/>
+    <exclude name="sql/ecotests/**"/>
+  </javac>
+  <copy todir="${tests.classes.dir}">
+    <fileset dir="${tests.src.dir}">
+      <include name="gfxdperf/**/*.sql"/>
+      <include name="gfxdperf/tpch/answers/*.out"/>
+      <include name="gfxdperf/tpch/oracle/cols/*.col"/>
+      <include name="cacheperf/comparisons/gemfirexd/jpmc/ddl/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/jpmc/sql/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/hkjc/ddl/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/hkjc/poc/ddl/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/poc/ddl/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/nanotrader/data/*.dat"/>
+      <include name="cacheperf/comparisons/gemfirexd/nanotrader/ddl/*.sql"/>
+      <include name="cacheperf/comparisons/gemfirexd/tpcc/ddl/*.txt"/>
+      <include name="gfxdperf/**/*.xml"/>
+      <include name="sql/hadoopHA/networkPartitionClientConfig.xml"/>
+      <include name="sql/hdfs/*.xml"/>
+    </fileset>
+  </copy>
+</target>
+
+ <target name="-gfxd-internal-compile-tests"
+        depends="-compile-tests-pass2, -derby-testing-only">
+  <description>Compiles the GemFireXD test code and the derby tests.
+               It does not build any GemFire product code.</description>
+  <mkdir dir="${gemfirexd.tests.classes.dir}"/>
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="off" destdir="${gemfirexd.tests.classes.dir}" includeAntRuntime="true" nowarn="off" optimize="off" encoding="UTF-8">
+    <src path="${gemfirexd.tests.src.dir}/junit"/>
+    <src path="${gemfirexd.tests.src.dir}/dunit"/>
+    <exclude name="**/jarSource/**/*.java"/>
+    <classpath refid="gemfirexd.tests.compile.classpath"/>
+  </javac>
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="off" destdir="${gemfirexd.tests.classes.dir}" includeAntRuntime="true" nowarn="off" optimize="off" encoding="UTF-8">
+    <src path="${gemfirexd.tests.src.dir}/integration/hibernate"/>
+    <classpath refid="gemfirexd.integration.tests.compile.classpath"/>
+  </javac>
+  <copy todir="${gemfirexd.tests.classes.dir}">
+    <fileset dir="${gemfirexd.tests.src.dir}">
+      <include name="**/*.xml"/>
+      <include name="**/*.dtd"/>
+      <include name="**/*.sql"/>
+      <include name="**/*.ddl"/>
+      <include name="**/*.jar"/>
+      <include name="**/*.dat"/>
+      <include name="**/*.keystore"/>
+      <include name="**/*.tbl"/>
+    </fileset>
+  </copy>
+  <copy todir="${tests.classes.dir}">
+    <fileset dir="${tests.src.dir}">
+      <include name="sql/testDBs/*.sql"/>
+      <include name="sql/tpce/*.sql"/>
+      <include name="sql/tpch/*.sql"/>
+      <include name="sql/schemas/*/*.sql"/>
+      <include name="sql/schemas/*.sql"/>
+      <include name="sql/view/*.sql"/>
+      <include name="sql/ciIndex/*.sql"/>
+      <include name="sql/ciIndex/*.dat"/>
+      <include name="sql/poc/*/*.sql"/>
+      <include name="sql/poc/*/data/*"/>
+    </fileset>
+  </copy>
+
+  <!-- Create jars -->
+  <jar destfile="${extraJars.dir}/tpcc-mapreduce.jar"
+      basedir="${tests.out.dir}/classes"
+      includes="cacheperf/comparisons/gemfirexd/tpcc/mapreduce/*.class"/>
+
+  <!-- recreate mapreduce.jar for addition of mapreduce classes from gfxd test compile -->
+  <jar destfile="${extraJars.dir}/mapreduce.jar">
+    <fileset dir="${tests.out.dir}/classes">
+      <include name="hydra/*.class"/>
+      <include name="util/*.class"/>
+      <include name="hdfs/mapreduce/*.class"/>
+      <include name="sql/hdfs/mapreduce/*.class"/>
+    </fileset>
+  </jar>
+</target>
+
+<target name="gfxd-generate-license" depends="-gfxd-props">
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="${compile-gemfire.deprecation}" destdir="${gemfirexd.out.dir}/classes" includeAntRuntime="true" nowarn="off" optimize="off" srcdir="${basedir}/gemfirexd" verbose="off" encoding="UTF-8"
+     >
+    <include name="java/engine/com/pivotal/gemfirexd/internal/GemFireXDVersion.java"/>
+    <classpath>
+      <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j-remote.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${mx4j-tools.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${commons-logging.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${commons-io.jar.name}"/>
+      <pathelement location="${product.lib.dir}/${commons-modeler.jar.name}"/>
+      <pathelement location="${findbugs-annotations.jar}"/>
+    </classpath>
+  </javac>
+  <delete file="${gemfirexd.jar}" quiet="true"/>
+  <mkdir dir="${gemfirexd.product.dir}/lib"/>
+  <mkdir dir="${gemfirexd.product.dir}/ext-lib"/>
+
+  <generateVersionResourceFile 
+      resourcefile="GemFireXDVersion.properties"
+      resourcepath="com/pivotal/gemfirexd/internal"
+      productname="GemFireXD"
+      productversion="${gemfirexd.version}"
+      gemfireversion="${gemfire.version}"
+      classesdir="${gemfirexd.out.dir}/classes"/>
+</target>
+
+<!-- BEGIN .NET targets -->
+
+<target name="-gfxd-compile-ado-tests" depends="-gfxd-props">
+  <description>
+    Compiles the GemFireXD java and .NET test code for ADO.NET tests.
+  </description>
+  <mkdir dir="${gemfirexd.ado.out.dir}"/>
+  <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="off" destdir="${gemfirexd.ado.out.dir}" includeAntRuntime="true" nowarn="off" optimize="off" encoding="UTF-8">
+    <src path="${gemfirexd.tests.src.dir}/csharp"/>
+    <classpath refid="gemfirexd.tests.compile.classpath"/>
+  </javac>
+</target>
+
+<target name="gfxd-build-adonet"
+        depends="-gfxd-props, -gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools, gfxd-build-adonet-only"/>
+
+<target name="gfxd-build-adonet-only"
+        depends="-gfxd-props, -gfxd-compile-ado-tests, gfxd-pack-windows-product"
+        if="gfxd.build.csharp">
+  <!--
+    This first builds gemfirexdclient.dll using ikvmc and copies to
+    appropriate location.  Then builds the ADO.NET project using either
+    visual studio on windows or mono-xbuild on linux.
+  -->
+
+  <!-- first run ikvmc to generate gemfirexdclient.dll -->
+  <mkdir dir="${gemfirexd.ado.out.dir}"/>
+  <antcall target="-gfxd-run-ikvmc"/>
+
+  <!-- setup the solution/csproj files substituting the paths -->
+  <antcall target="-gfxd-prepare-proj">
+    <param name="cs.start.dir" value="${gemfirexd.ado.out.dir}"/>
+  </antcall>
+
+  <!-- now run msbuild/xbuild to build the ADO.NET driver -->
+  <antcall target="-gfxd-csbuild">
+    <param name="cs.start.dir" value="${gemfirexd.ado.out.dir}"/>
+    <param name="cs.makefile" value="${gemfirexd.csproj.dir}/GNUmakefile"/>
+    <param name="cs.target" value="gfxd-build-adonet"/>
+  </antcall>
+
+  <!-- also build in the debug configuration -->
+  <antcall target="-gfxd-csbuild">
+    <param name="cs.start.dir" value="${gemfirexd.ado.out.dir}"/>
+    <param name="cs.makefile" value="${gemfirexd.csproj.dir}/GNUmakefile"/>
+    <param name="cs.target" value="gfxd-build-adonet-dbg"/>
+  </antcall>
+
+  <!-- copy the DLLs and other artifacts to hidden directory  -->
+  <mkdir dir="${hiddenadonet.dir}/Release"/>
+  <copy preservelastmodified="true" todir="${hiddenadonet.dir}/Release">
+    <fileset dir="${gemfirexd.ado.out.dir}/Release">
+      <include name="IKVM.*.dll"/>
+      <include name="Pivotal.Data.GemFireXD.dll*"/>
+      <include name="Pivotal.Data.GemFireXD.pdb"/>
+      <include name="Pivotal.Data.GemFireXD.xml"/>
+    </fileset>
+  </copy>
+  
+
+  <!-- copy the debug dlls to hidden dir -->
+  <mkdir dir="${hiddenadonet.dir}/Debug"/>
+  <copy preservelastmodified="true" todir="${hiddenadonet.dir}/Debug">
+    <fileset dir="${gemfirexd.ado.out.dir}/Debug">
+      <include name="Pivotal.Data.GemFireXD.dll*"/>
+      <include name="Pivotal.Data.GemFireXD.pdb"/>
+      <include name="Pivotal.Data.GemFireXD.xml"/>
+    </fileset>
+  </copy>
+  
+</target>
+
+<target name="gfxd-run-adonet-tests"
+        depends="gfxd-build-adonet, gfxd-run-adonet-tests-only">
+  <description>
+    Builds the ADO.NET driver and run the NUnit tests.
+    Extra args can be passed with -Dnunit.args="..."
+  </description>
+</target>
+
+<target name="gfxd-run-adonet-tests-only"
+        depends="-gfxd-props, gfxd-build-adonet-only"
+        if="gfxd.build.csharp">
+  <description>
+    Run the NUnit tests for the ADO.NET driver.
+    Extra args can be passed with -Dnunit.args="..."
+  </description>
+  <property name="nunit.args" value=""/>
+  <exec dir="${gemfirexd.ado.out.dir}" executable="bash"
+        failonerror="true" spawn="false" vmlauncher="false">
+    <arg value="--norc"/>
+    <arg value="${gemfirexd.ado.tests.runner}"/>
+    <arg value="${nunit.args}"/>
+    <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+    <env key="GFLIB_MODEL" value="32bit"/>
+    <env key="OSBUILDDIR" value="${osbuild.dir}"/>
+    <env key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+    <env key="MONO" value="${mono.exe}"/>
+    <env key="NUNIT" value="${nunit.dir}"/>
+  </exec>
+</target>
+
+<target name="gfxd-start-devenv"
+        depends="-gfxd-props, -gfxd-compile-ado-tests"
+        if="gfxd.build.csharp">
+  <property name="orig.sln" value="false"/>
+  <condition property="no.orig.sln">
+    <equals arg1="${orig.sln}" arg2="false"/>
+  </condition>
+  <condition property="use.orig.sln">
+    <equals arg1="${orig.sln}" arg2="true"/>
+  </condition>
+
+  <!-- first run ikvmc to generate gemfirexdclient.dll -->
+  <mkdir dir="${gemfirexd.ado.out.dir}"/>
+  <antcall target="-gfxd-run-ikvmc"/>
+
+  <!-- setup the solution/csproj files substituting the paths -->
+  <conditional if="no.orig.sln">
+    <property name="cs.sln.dir" value="${gemfirexd.ado.out.dir}"/>
+    <antcall target="-gfxd-prepare-proj">
+      <param name="cs.start.dir" value="${gemfirexd.ado.out.dir}"/>
+    </antcall>
+  </conditional>
+
+  <!-- next start visual studio/monodevelop with the generated solution file -->
+  <property name="cs.sln.dir" value="${gemfirexd.csproj.dir}"/>
+  <antcall target="-gfxd-csbuild">
+    <param name="cs.start.dir" value="${gemfirexd.ado.out.dir}"/>
+    <param name="cs.sln.dir" value="${cs.sln.dir}"/>
+    <param name="cs.makefile" value="${gemfirexd.csproj.dir}/GNUmakefile"/>
+    <param name="cs.target" value="gfxd-start-devenv"/>
+    <param name="exec.spawn" value="true"/>
+  </antcall>
+</target>
+
+<target name="-gfxd-run-ikvmc" depends="-gfxd-props"
+        description="Create gemfirexdclient.dll invoking ikvmc">
+  <delete file="${gemfirexdclient.dll}" quiet="true"/>
+  <mkdir dir="${gemfirexd.ado.product.dir}"/>
+  <echo message="gemfirexd.ado.product.dir = ${gemfirexd.ado.product.dir}" level="info"/>
+  <echo message="gemfirexdclient.dll = ${gemfirexdclient.dll}" level="info"/>
+  <exec dir="${gemfirexd.ado.out.dir}" executable="${ikvmc.exe}" failonerror="true">
+    <arg value="${ikvmc.pre}"/>
+    <arg value="-target:library"/>
+    <arg value="-version:1.4.1.0"/>
+    <arg value="-assembly:${gemfirexdclient.dllname}"/>
+    <arg value="-keyfile:${basedir}/release/keys/gemfire.snk"/>
+    <arg value="-nojni"/>
+    <arg value="-warnaserror:100"/>
+    <arg value="-out:${gemfirexdclient.dll}"/>
+    <arg value="${gemfirexdclient_nojni.jar}"/>
+  </exec>
+</target>
+
+<target name="-gfxd-prepare-proj" depends="-gfxd-props"
+        description="Create project file substituting paths appropriately">
+  <antcall target="-gfxd-csbuild">
+    <param name="cs.start.dir" value="${cs.start.dir}"/>
+    <param name="cs.makefile" value="${gemfirexd.csproj.dir}/GNUmakefile"/>
+    <param name="cs.target" value="gfxd-prepare-proj"/>
+  </antcall>
+</target>
+
+<target name="-gfxd-csbuild" depends="-gfxd-props"
+        description="Builds a .NET project using visual studio or mono invoking make as pointed to by cs.target property">
+  <property name="cs.start.dir" value="${gemfirexd.out.dir}" />
+  <property name="cs.sln.dir" value="${gemfirexd.ado.out.dir}" />
+  <property name="cs.makefile" value="${gemfirexd.csproj.dir}/GNUmakefile" />
+  <property name="cs.target" value="all" />
+  <!-- not.exec.spawn = NOT(exec.spawn) ie true=>false and false=>true -->
+  <property name="exec.spawn" value="false"/>
+  <condition property="not.exec.spawn" value="false">
+    <istrue value="${exec.spawn}"/>
+  </condition>
+  <condition property="not.exec.spawn" value="true">
+    <isfalse value="${exec.spawn}"/>
+  </condition>
+
+  <echo message="cs.start.dir = ${cs.start.dir}" level="info"/>
+  <echo message="cs.makefile = ${cs.makefile}" level="info"/>
+  <echo message="cs.target = ${cs.target}" level="info"/>
+  <echo message="gemfirexd.ado.product.dir = ${gemfirexd.ado.product.dir}" level="info"/>
+  <echo message="ikvm.dir = ${ikvm.dir}" level="info"/>
+  <echo message="ant.make = ${ant.make}" level="info"/>
+  <echo message="gfxd.build.csharp = ${gfxd.build.csharp}" level="info"/>
+
+  <!--
+    .NET build uses ${ant.make} with appropriate GNUmakefile since vcvars.bat
+    runs make in all cases
+  -->
+  <exec dir="${cs.start.dir}" executable="${ant.make}"
+        failonerror="${not.exec.spawn}" spawn="${exec.spawn}"
+        vmlauncher="false">
+    <arg value="-f"/>
+    <arg value="${cs.makefile}"/>
+    <arg value="${cs.target}"/>
+    <env key="OSNAME" value="${os.name}"/>
+    <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+    <env key="GFLIB_MODEL" value="32bit"/>
+    <env key="BASEDIR" value="${basedir}"/>
+    <env key="OSBUILDDIR" value="${osbuild.dir}"/>
+    <env key="GEMFIREXD" value="${gemfirexd.product.dir}"/>
+    <env key="ANTMAKE" value="${ant.make}"/>
+    <env key="MAKEFILE" value="GNUmakefile"/>
+    <env key="GFXDADOPRODDIR" value="${gemfirexd.ado.product.dir}"/>
+    <env key="GFXDADOOUTDIR" value="${gemfirexd.ado.out.dir}"/>
+    <env key="GFXDADOSLNDIR" value="${cs.sln.dir}"/>
+    <env key="GFXDADOSRCDIR" value="${gemfirexd.ado.src.dir}"/>
+    <env key="GFXDADOTESTSRCDIR" value="${gemfirexd.ado.tests.src.dir}"/>
+    <env key="GFXDCSDIR" value="${gemfirexd.csproj.dir}"/>
+    <env key="IKVMDIR" value="${ikvm.dir}"/>
+    <env key="NUNIT" value="${nunit.dir}"/>
+    <env key="MSBUILD" value="${gfxd.build.csharp}"/>
+    <env key="MONODIR" value="${mono.dir}"/>
+  </exec>
+</target>
+
+<target name="gfxd-build-adonet-installer" depends="-gfxd-props">
+
+  <property file="${build.dir}/build.number"/>
+  
+  <delete dir="${osbuild.dir}/gemfirexd/dotnet_installer"/>
+  <mkdir dir="${osbuild.dir}/gemfirexd/dotnet_installer"/>
+  <delete dir="${osbuild.dir}/csharp_tmp"/>
+  
+  <!-- TODO: Future msbuild target when installer project is converted to Wix -->
+  <copy todir="${osbuild.dir}/csharp_tmp">
+    <fileset dir="${basedir}/gemfirexd/csharp"/>
+  </copy>
+  
+  <!-- Create property to hold osbuild.dir with \\ in path -->
+  <propertyregex property="osbuilddir.win"
+                   input="${osbuild.dir}"
+                   regexp="\\"
+                   replace="\\\\\\\\"/>
+  
+  <!-- If osbuild.dir has \, then use the conversion. If only has /, then use it directly -->
+  <if>
+    <isset property="osbuilddir.win"/>
+	<then>
+	  <property name="osbuilddir.adonet" value="${osbuilddir.win}"/>
+	</then>
+	<else>
+	  <property name="osbuilddir.adonet" value="${osbuild.dir}"/>
+	</else>
+  </if>
+  
+  <replace file="${osbuild.dir}/csharp_tmp/GemFireXD.NET/gemfirexd.Installer.2010/gemfirexd.Installer.2010.vdproj"
+           token="__OSBUILDDIR__"
+           value="${osbuilddir.adonet}"
+           summary="yes"/>
+
+  <!-- Create name of MSI with version and build.number -->
+  <replace file="${osbuild.dir}/csharp_tmp/GemFireXD.NET/gemfirexd.Installer.2010/gemfirexd.Installer.2010.vdproj"
+           token="__ADONET_INSTALLER_NAME__"
+           value="GemFire_XD_EntityFramework_${gemfirexd.version}.msi"
+           summary="yes"/>
+ 
+  <!-- Create ADO.NET Driver, Entity Framework, Designer, and MSI installer -->
+  <exec dir="${osbuild.dir}/csharp_tmp/GemFireXD.NET" 
+        vmlauncher="false"
+        executable="devenv.com"
+        failonerror="true">
+        <arg line="GemFireXD.NET.2010.sln /build 'Release' /useenv"/>
+        <env key="OutDir" value="${osbuild.dir}/gemfirexd/dotnet_installer"/>
+        <env key="OSBUILDDIR" value="${osbuild.dir}"/>
+        <env key="BASEDIR" value="${basedir}"/>
+        <env key="BaseIntermediateOutputPath" value="${osbuild.dir}/gemfirexd/dotnet_installer/obj"/>
+  </exec>
+
+  <!-- Copy MSI and README.txt to product directory -->
+  <copy todir="${gemfirexd.ado.product.dir}">
+    <fileset dir="${gemfirexd.out.dir}/dotnet_installer">
+      <include name="*.msi"/>
+    </fileset>
+    <fileset dir="${basedir}/gemfirexd/csharp/GemFireXD.NET">
+      <include name="README.txt"/>
+    </fileset>
+  </copy> 
+
+</target>
+
+<!-- END .NET targets -->
+
+<!-- BEGIN ODBC targets -->
+
+<target name="gfxd-build-odbc"
+        depends="-gfxd-props, -gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools, gfxd-build-odbc-only"
+        description="Compile the JDBC client driver files with GCJ and the ODBC driver files"/>
+
+<target name="gfxd-build-odbc-only" 
+    depends="gfxd-build-odbc32-only, gfxd-build-odbc64-only"
+    if="gfxd.build.odbc"
+    description="Compile the JDBC client driver files with GCJ and the ODBC driver files" />
+    
+<!--<target name="gfxd-build-odbc-only"
+        depends="-gfxd-props, -gfxd-odbc-java-list"
+        if="gfxd.build.odbc"
+        description="Compile the JDBC client driver files with GCJ and the ODBC driver files">
+
+  <pathconvert dirsep="/" property="odbc.gcm.dir">
+    <path location="${gcm.dir}"/>
+  </pathconvert>
+  <pathconvert dirsep="/" property="odbc.classes.dir">
+    <path location="${gemfirexd.out.dir}/classes"/>
+  </pathconvert>
+  <pathconvert dirsep="/" property="odbc.outbase">
+    <path location="${gemfirexd.odbc.out.dir}"/>
+  </pathconvert> -->
+  <!-- use GNU make to compile the ODBC driver from JDBC driver files using GCJ and ODBC impl -->
+    <!--<exec dir="${derby.src}/odbc" executable="${ant.make}"
+        failonerror="true" vmlauncher="false"> -->
+    <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+    <!--<env key="GFLIB_MODEL" value="32bit"/>
+    <arg value="GCMDIR=${gcm.dir}"/>
+    <arg value="SRCBASE_EX=${derby.src}"/>
+    <arg value="CLASSES_EX=${gemfirexd.out.dir}/classes"/>
+    <arg value="OUTBASE_EX=${gemfirexd.odbc.out.dir}"/>
+  </exec>
+</target> -->
+
+<target name="gfxd-pack-odbc" depends="-gfxd-props, -gfxd-odbc-java-list"
+    if="gfxd.build.odbc"
+    description="Packs the progress ODBC driver files into the product-odbc">
+    <property name="odbc.product.dir" value="${osbuild.dir}/product-odbc"/>
+    <property name="odbc.progress.dir" value="${gcm.dir}/where/progress"/>
+    <echo message="gf.os = ${gf.os}" level="info"/>
+    <mkdir dir="${odbc.product.dir}"/> 
+    <copy preservelastmodified="true" todir="${odbc.product.dir}">
+      <fileset dir="${odbc.progress.dir}/odbc">
+        <include name="linux/**/**"/>
+        <include name="windows/**/**"/>
+      </fileset>
+    </copy>
+    <copy preservelastmodified="true" todir="${odbc.product.dir}">
+      <fileset dir="${odbc.progress.dir}">
+        <include name="adonet/**/**"/>
+      </fileset>
+    </copy>
+
+   <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/PROG_README.txt"
+     tofile="${odbc.product.dir}/linux/readme.txt"/>
+
+   <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/PROG_README.txt"
+     tofile="${odbc.product.dir}/windows/readme.txt"/>
+
+   <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/README.txt"
+     todir="${odbc.product.dir}"/>
+
+      <replace file="${odbc.product.dir}/README.txt"
+      token="__VERSION__"
+      value="${gemfirexd.version}"
+      summary="yes"/>
+
+   <copy file="${basedir}/release/installer/Pivotal_EULA.txt"
+      tofile="${odbc.product.dir}/EULA.txt"/>
+
+</target> 
+
+<target name="gfxd-build-odbc32-only"
+    depends="-gfxd-props, -gfxd-odbc-java-list"
+    if="gfxd.build.odbc"
+    description="Compile the JDBC client driver files with GCJ and the ODBC driver files">
+ 
+    <property name="odbc.product.dir" value="${osbuild.dir}/product-odbc"/>
+    <echo message="gf.os = ${gf.os}" level="info"/>
+
+    <antcall target="-gfxd-build-odbc-impl">
+      <param name="buildbits" value="32bit" />
+      <param name="buildiodbc" value="false" />
+    </antcall>
+
+    <conditional unless="isWindows">
+      <antcall target="-gfxd-build-odbc-impl">
+        <param name="buildbits" value="32bit" />
+        <param name="buildiodbc" value="true" />
+      </antcall>
+    </conditional>
+
+    <conditional unless="isWindows">
+      <mkdir dir="${odbc.product.dir}/${gf.os}/32"/> 
+      <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/32">
+        <fileset dir="${gemfirexd.odbc.out.dir}/32">
+          <include name="**/*.so"/>
+          <include name="**/*.dll"/>
+          <include name="**/*.dylib"/>
+          <exclude name="**/debug/*"/>
+        </fileset>
+      </copy>
+    </conditional> 
+
+    <conditional if="isMac">
+      <copy file="${gcm.dir}/where/cplusplus/gcc/macosx/4.8.1/lib/i386/libgcj.14.dylib"
+        tofile="${odbc.product.dir}/${gf.os}/32/libgcj.14.dylib"/>
+      <copy file="${gcm.dir}/where/cplusplus/gcc/macosx/4.8.1/lib/libgcc_s.1.dylib"
+        tofile="${odbc.product.dir}/${gf.os}/32/libgcc_s.1.dylib"/>
+    </conditional> 
+
+</target>
+
+<target name="gfxd-build-odbc64-only"
+        depends="-gfxd-props, -gfxd-odbc-java-list"
+        if="gfxd.build.odbc"
+        description="Compile the JDBC client driver files with GCJ and the ODBC driver files">
+ 
+     <property name="odbc.product.dir" value="${osbuild.dir}/product-odbc"/>
+     <echo message="gf.os   = ${gf.os}" level="info"/>
+
+     <antcall target="-gfxd-build-odbc-impl">
+       <param name="buildbits" value="64bit" />
+       <param name="buildiodbc" value="false" />
+     </antcall>
+     
+    <conditional unless="isWindows">
+      <antcall target="-gfxd-build-odbc-impl">
+        <param name="buildbits" value="64bit" />
+        <param name="buildiodbc" value="true" />
+      </antcall>
+    </conditional>
+
+    <conditional unless="isWindows">
+      <mkdir dir="${odbc.product.dir}/${gf.os}/64"/> 
+      <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/64">
+        <fileset dir="${gemfirexd.odbc.out.dir}/64">
+   <include name="**/*.so"/>
+   <include name="**/*.dll"/>
+      <include name="**/*.dylib"/>
+   <exclude name="**/debug/*"/>
+        </fileset>
+      </copy>
+    </conditional> 
+
+    <conditional if="isMac">
+      <copy file="${gcm.dir}/where/cplusplus/gcc/macosx/4.8.1/lib/libgcj.14.dylib"
+     tofile="${odbc.product.dir}/${gf.os}/64/libgcj.14.dylib"/>
+      <copy file="${gcm.dir}/where/cplusplus/gcc/macosx/4.8.1/lib/libgcc_s.1.dylib"
+     tofile="${odbc.product.dir}/${gf.os}/64/libgcc_s.1.dylib"/>
+    </conditional>
+
+</target>
+
+<target name="gfxd-build-odbc64-sanity"
+        depends="-gfxd-props, -gfxd-odbc-java-list"
+        if="gfxd.build.odbc"
+        description="Minimum compile of the JDBC client driver files with GCJ and the ODBC driver files">
+
+    <antcall target="-gfxd-build-odbc-impl">
+      <param name="buildbits" value="64bit" />
+      <param name="buildiodbc" value="false" />
+    </antcall>
+</target>
+
+<target name="-gfxd-build-odbc-impl"
+        depends="-gfxd-props, -gfxd-odbc-java-list"
+        if="gfxd.build.odbc"
+        description="Compile the JDBC client driver files with GCJ and the ODBC driver files">
+
+  <pathconvert dirsep="/" property="odbc.gcm.dir">
+    <path location="${gcm.dir}"/>
+  </pathconvert>
+  <pathconvert dirsep="/" property="odbc.classes.dir">
+    <path location="${gemfirexd.out.dir}/classes"/>
+  </pathconvert>
+  <pathconvert dirsep="/" property="odbc.outbase">
+    <path location="${gemfirexd.odbc.out.dir}"/>
+  </pathconvert>
+  <!-- use GNU make to compile the ODBC driver from JDBC driver files using GCJ and ODBC impl -->
+  <exec dir="${derby.src}/odbc" executable="${ant.make}"
+        failonerror="true" vmlauncher="false">
+    <env key="GFLIB_MODEL" value="${buildbits}"/>
+    <arg value="GCMDIR=${gcm.dir}"/>
+    <arg value="SRCBASE_EX=${derby.src}"/>
+    <arg value="CLASSES_EX=${gemfirexd.out.dir}/classes"/>
+    <arg value="OUTBASE_EX=${gemfirexd.odbc.out.dir}"/>
+    <env key="BUILDIODBC" value="${buildiodbc}"/>
+  </exec>
+</target>
+
+<target name="gfxd-build-odbc-java"
+        depends="-gfxd-props, -gfxd-build-product, -gfxd-build-ddlutils, -gfxd-build-tools, gfxd-build-odbc-java-only"
+        description="Compile the JDBC client driver files with GCJ"/>
+
+<target name="gfxd-build-odbc-java-only"
+        depends="-gfxd-props, -gfxd-odbc-java-list"
+        description="Compile the JDBC client driver files with GCJ">
+
+  <!-- use GNU make to compile the JDBC driver files using GCJ -->
+  <exec dir="${derby.src}/odbc" executable="${ant.make}"
+        failonerror="true" vmlauncher="false">
+    <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+    <env key="GFLIB_MODEL" value="32bit"/>
+    <arg value="clientjar"/>
+    <arg value="GCMDIR=${gcm.dir}"/>
+    <arg value="SRCBASE_EX=${derby.src}"/>
+    <arg value="CLASSES_EX=${gemfirexd.out.dir}/classes"/>
+    <arg value="OUTBASE_EX=${gemfirexd.odbc.out.dir}"/>
+    <arg value="OUTDIR_EX=${gemfirexd.odbc.output}"/>
+  </exec>
+</target>
+
+<target name="-gfxd-odbc-java-list">
+  <!-- create the list of .java files -->
+  <fileset id="gemfirexd.odbc.java.fileset" dir="${basedir}">
+    <include name="gemfirexd/java/shared/**/*.java"/>
+    <include name="gemfirexd/java/client/**/*.java"/>
+    <exclude name="gemfirexd/java/client/com/pivotal/gemfirexd/thrift/**"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/Attribute.java"/>
+    <include name="gemfirexd/java/engine/com/vmware/sqlfire/Attribute.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/DRDAConstants.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/JDBC20Translation.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/JDBC30Translation.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/JDBC40Translation.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/SQLState.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/reference/Property.java"/>
+    <include name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/services/info/*.java"/>
+    <exclude name="gemfirexd/java/shared/**/*40.java"/>
+    <exclude name="gemfirexd/java/client/**/*40.java"/>
+    <exclude name="gemfirexd/java/engine/com/pivotal/gemfirexd/internal/iapi/services/info/Version.java"/>
+    <!-- also include the GemFire shared classes -->
+    <include name="src/com/gemstone/gemfire/internal/shared/*.java"/>
+    <include name="src/com/gemstone/gnu/trove/*.java"/>
+    <exclude name="src/com/gemstone/gnu/trove/TObjectLongHash*.java"/>
+    <exclude name="src/com/gemstone/gnu/trove/TObjectLongIterator.java"/>
+    <exclude name="src/com/gemstone/gemfire/internal/shared/*JNA*.java"/>
+    <exclude name="src/com/gemstone/gemfire/internal/shared/Jdk6Helper.java"/>
+    <!-- this is only DRDA driver so exclude thrift classes -->
+    <exclude name="gemfirexd/java/shared/com/pivotal/gemfirexd/thrift/**/*.java"/>
+    <exclude name="gemfirexd/java/client/com/pivotal/gemfirexd/thrift/**/*.java"/>
+    <exclude name="gemfirexd/java/client/com/pivotal/gemfirexd/jdbc/ClientDriver.java"/>
+  </fileset>
+  <fileset id="gemfirexd.odbc.java.fileset2" dir="${basedir}">
+    <include name="gemfirexd/java/shared/com/pivotal/gemfirexd/thrift/gfxdConstants.java"/>
+    <include name="gemfirexd/java/client/com/pivotal/gemfirexd/thrift/internal/ClientConfiguration.java"/>
+  </fileset>
+
+  <!-- rebuild the java-files.txt if any of the files have changed -->
+  <uptodate property="odbc.javaBuild.skip" targetfile="${gemfirexd.odbc.out.dir}/java-files.txt">
+    <srcfiles refid="gemfirexd.odbc.java.fileset"/>
+    <srcfiles refid="gemfirexd.odbc.java.fileset2"/>
+  </uptodate>
+  <conditional unless="odbc.javaBuild.skip">
+    <mkdir dir="${gemfirexd.odbc.out.dir}"/>
+    <pathconvert pathsep="${line.separator}" dirsep="/" property="gemfirexd.odbc.java.files"
+       refid="gemfirexd.odbc.java.fileset"/>
+    <pathconvert pathsep="${line.separator}" dirsep="/" property="gemfirexd.odbc.java.files2"
+       refid="gemfirexd.odbc.java.fileset2"/>
+    <echo file="${gemfirexd.odbc.out.dir}/java-files.txt">${gemfirexd.odbc.java.files}${line.separator}${gemfirexd.odbc.java.files2}</echo>
+  </conditional>
+</target>
+
+<!-- gfxd-build-odbc32-install -->
+<target name="gfxd-build-odbc32-install" depends="-gfxd-props, gfxd-build-odbc32-only"
+        if="gfxd.build.odbc"
+        description="Builds the 32 bit ODBC driver installer">
+
+  <property name="odbc.product.dir" value="${osbuild.dir}/product-odbc"/>
+  <echo message="gf.os   = ${gf.os}" level="info"/>
+
+   <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/README.txt"
+     todir="${odbc.product.dir}"/>
+
+      <replace file="${odbc.product.dir}/README.txt"
+      token="__VERSION__"
+      value="${gemfirexd.version}"
+      summary="yes"/>
+ 
+   <copy file="${basedir}/release/installer/Pivotal_EULA.txt"
+      tofile="${odbc.product.dir}/EULA.txt"/>
+
+  <!-- Windows specific code to build odbc-installer with the solution file -->
+  <conditional if="isWindows">
+    <getdependency name="wix.dir" type="dir" location="where/cplusplus/thirdparty/windows/wix" forClasspath="false"/>
+    <exec dir="gemfirexd/odbc/GemFireXDODBCSetupInstaller" executable="${ant.make}"
+      failonerror="true" vmlauncher="false">
+      <arg value="-f"/>
+      <arg value="${basedir}/gemfirexd/odbc/GemFireXDODBCSetupInstaller/GNUmakefile_windows"/>
+      <arg value="odbc-install32"/>
+      <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+      <env key="GFLIB_MODEL" value="32bit"/>
+      <env key="GFXDODBCSLNDIR" value="${basedir}/gemfirexd/odbc/GemFireXDODBCSetupInstaller"/>
+      <env key="MSBUILD" value="msbuild.exe"/>
+      <env key="WIX" value="${wix.dir}"/>
+    </exec>
+   
+   <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/32/artifacts">
+    <fileset dir="${gemfirexd.odbc.out.dir}/32">
+      <include name="gemfirexdodbc*.dll"/>
+      <include name="gemfirexdodbc*.lib"/>
+      <include name="odbc-installer.exe"/>
+    </fileset>
+   </copy>
+   
+   <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/32">
+    <fileset dir="${gemfirexd.odbc.out.dir}/32">
+      <include name="CustomActionOdbcDriver*.dll"/>
+    </fileset>
+   </copy>
+   
+   <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/WINDOWS_README.txt"
+      tofile="${odbc.product.dir}/${gf.os}/WINDOWS_README.txt"/>
+
+      <replace file="${odbc.product.dir}/${gf.os}/WINDOWS_README.txt"
+      token="__VERSION__"
+      value="${gemfirexd.version}"
+      summary="yes"/>
+ 
+ <description>Creates an Installshield installer based upon the product tree</description>
+    <chmod type="file" perm="a+x">
+      <fileset dir="${odbc.product.dir}/${gf.os}/32"/>
+    </chmod>
+    <property name="odbc_installer.dir" value="${odbc.product.dir}/${gf.os}/32/installer"/>
+    <property file="${basedir}/build-artifacts/build.number"/>
+
+    <delete dir="${odbc_installer.dir}"/>
+    <mkdir dir="${odbc_installer.dir}"/>
+    <touch file="${odbc_installer.dir}/vernum"/>
+    <echo file="${odbc_installer.dir}/vernum">
+      vernum=${gemfirexd.version}
+    </echo>
+    <replace file="${odbc_installer.dir}/vernum" token="." value=""/>
+    <property file="${odbc_installer.dir}/vernum"/>
+    <property name="bits" value="32bit"/>
+ <property name="WIX" value="${wix.dir}"/>
+ 
+    <property name="plat.vernum" value="Windows_${bits}_${vernum}_b${build.number}"/>
+    <echo message="plat.vernum  = ${plat.vernum}" level="info"/>
+ <echo message="OSBUILDDIR  = ${odbc.product.dir}/${gf.os}" level="info"/>
+ <echo message="WIX  = ${WIX}" level="info"/>
+ <echo message="BITS  = ${bits}" level="info"/>
+ 
+    <exec dir="${basedir}" executable="bash" failonerror="true">
+      <arg value="gemfirexd/odbc/GemFireXDODBCSetupInstaller/makeOdbcMSI.sh"/>
+      <env key="VERSION" value="${gemfirexd.version}"/>
+      <env key="OSBUILDDIR" value="${odbc.product.dir}/${gf.os}/32"/>
+      <env key="WIX" value="${wix.dir}"/>
+      <env key="BITS" value="${bits}"/>
+   <env key="BNUMBER" value="${build.number}"/>
+    </exec>
+ 
+    <!-- clean up msi generation cruft -->
+    <delete>
+      <fileset dir="${odbc_installer.dir}" includes="fragment.** installer_gen.** ui.wixobj vernum">
+      </fileset>
+    </delete>
+
+    </conditional>
+ 
+  <conditional unless="isWindows">
+    <mkdir dir="${gemfirexd.odbc.out.dir}/32/iodbc"/>
+    <conditional if="isLinux">
+      <mkdir dir="${gemfirexd.odbc.out.dir}/32/progress"/>
+    </conditional>
+    <exec dir="gemfirexd/odbc/GemFireXDODBCSetupInstaller" executable="${ant.make}"
+      failonerror="true" vmlauncher="false">
+      <arg value="OSNAME=${os.name}"/>
+      <arg value="GCMDIR=${gcm.dir}"/>
+      <arg value="ADD_INCLUDES=gemfirexd/odbc/GemFireXDODBCSetupInstaller/gemfirexdodbcSetup"/>
+      <arg value="OUTBASE_EX=${gemfirexd.odbc.out.dir}"/>
+      <env key="GFLIB_MODEL" value="32bit"/>
+    </exec>
+
+    <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/32">
+      <fileset dir="${gemfirexd.odbc.out.dir}/32"> 
+        <include name="**/iodbc-installer"/>
+        <include name="**/progress-installer"/>
+        <include name="odbc-installer"/>
+      </fileset>
+    </copy> 
+
+    <chmod perm="a+x">
+      <fileset dir="${odbc.product.dir}/${gf.os}/32">
+        <include name="*"/>
+      </fileset>
+    </chmod>
+ 
+    <conditional if="isMac">
+      <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/MAC_README.txt"
+        tofile="${odbc.product.dir}/${gf.os}/MAC_README.txt"/>
+
+      <replace file="${odbc.product.dir}/${gf.os}/MAC_README.txt"
+        token="__VERSION__"
+        value="${gemfirexd.version}"
+        summary="yes"/>
+    </conditional>
+
+    <conditional if="isLinux">
+      <copy file="gemfirexd/odbc/GemFireXDODBCSetupInstaller/LINUX_README.txt"
+        tofile="${odbc.product.dir}/${gf.os}/LINUX_README.txt"/>
+
+      <replace file="${odbc.product.dir}/${gf.os}/LINUX_README.txt"
+        token="__VERSION__"
+        value="${gemfirexd.version}"
+        summary="yes"/>
+    </conditional>
+ 
+  </conditional>
+</target>
+
+<!-- gfxd-build-odbc64-install -->
+<target name="gfxd-build-odbc64-install" depends="-gfxd-props, gfxd-build-odbc64-only"
+        if="gfxd.build.odbc"
+        description="Builds the 64 bit ODBC driver installer">
+ 
+ <property name="odbc.product.dir" value="${osbuild.dir}/product-odbc"/>
+ <echo message="gf.os   = ${gf.os}" level="info"/>
+ 
+    <!-- Windows specific code to build odbc-installer with the solution file -->
+    <conditional if="isWindows">
+   <getdependency name="wix.dir" type="dir" location="where/cplusplus/thirdparty/windows/wix" forClasspath="false"/>
+   <exec dir="gemfirexd/odbc/GemFireXDODBCSetupInstaller" executable="${ant.make}"
+        failonerror="true" vmlauncher="false">
+    <arg value="-f"/>
+    <arg value="${basedir}/gemfirexd/odbc/GemFireXDODBCSetupInstaller/GNUmakefile_windows"/>
+    <arg value="odbc-install64"/>
+    <!-- GFLIB_MODEL is to keep vcvars.bat happy; doesn't imply 32-bit build -->
+    <env key="GFLIB_MODEL" value="64bit"/>
+    <env key="GFXDODBCSLNDIR" value="${basedir}/gemfirexd/odbc/GemFireXDODBCSetupInstaller"/>
+    <env key="MSBUILD" value="msbuild.exe"/>
+    <env key="WIX" value="${wix.dir}"/>
+   </exec>
+   
+   <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/64/artifacts">
+    <fileset dir="${gemfirexd.odbc.out.dir}/64">
+      <include name="gemfirexdodbc*.dll"/>
+      <include name="gemfirexdodbc*.lib"/>
+      <include name="odbc-installer.exe"/>
+    </fileset>
+   </copy>
+ 
+ <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/64">
+   <fileset dir="${gemfirexd.odbc.out.dir}/64">
+    <include name="CustomActionOdbcDriver*.dll"/>
+   </fileset>
+    </copy>
+   
+ <description>Creates an Installshield installer based upon the product tree</description>
+    <chmod type="file" perm="a+x">
+      <fileset dir="${gemfirexd.product.dir}/odbc/64"/>
+    </chmod>
+    <property name="odbc_installer.dir" value="${odbc.product.dir}/${gf.os}/64/installer"/>
+    <property file="${basedir}/build-artifacts/build.number"/>
+
+    <delete dir="${odbc_installer.dir}"/>
+    <mkdir dir="${odbc_installer.dir}"/>
+    <touch file="${odbc_installer.dir}/vernum"/>
+    <echo file="${odbc_installer.dir}/vernum">
+      vernum=${gemfirexd.version}
+    </echo>
+    <replace file="${odbc_installer.dir}/vernum" token="." value=""/>
+    <property file="${odbc_installer.dir}/vernum"/>
+    <property name="bits" value="64bit"/>
+    <property name="WIX" value="${wix.dir}"/>
+ 
+    <property name="plat.vernum" value="Windows_${bits}_${vernum}_b${build.number}"/>
+    <echo message="plat.vernum  = ${plat.vernum}" level="info"/>
+    <echo message="OSBUILDDIR  = ${odbc.product.dir}/${gf.os}" level="info"/>
+    <echo message="WIX  = ${WIX}" level="info"/>
+    <echo message="BITS  = ${bits}" level="info"/>
+ 
+    <exec dir="${basedir}" executable="bash" failonerror="true">
+      <arg value="gemfirexd/odbc/GemFireXDODBCSetupInstaller/makeOdbcMSI.sh"/>
+      <env key="VERSION" value="${gemfirexd.version}"/>
+      <env key="OSBUILDDIR" value="${odbc.product.dir}/${gf.os}/64"/>
+      <env key="WIX" value="${wix.dir}"/>
+      <env key="BITS" value="${bits}"/>
+      <env key="BNUMBER" value="${build.number}"/>
+    </exec>
+ 
+    <!-- clean up msi generation cruft -->
+    <delete>
+      <fileset dir="${odbc_installer.dir}" includes="fragment.** installer_gen.** ui.wixobj vernum">
+      </fileset>
+    </delete>
+ 
+    </conditional>
+ 
+    <!-- Code to build odbc-installer with the makefile (non-Windows) -->
+    <conditional unless="isWindows">
+      <mkdir dir="${gemfirexd.odbc.out.dir}/64/iodbc"/>
+    <conditional if="isLinux">
+      <mkdir dir="${gemfirexd.odbc.out.dir}/64/progress"/>
+    </conditional>
+    <exec dir="gemfirexd/odbc/GemFireXDODBCSetupInstaller" executable="${ant.make}"
+      failonerror="true" vmlauncher="false">
+      <arg value="OSNAME=${os.name}"/>
+      <arg value="GCMDIR=${gcm.dir}"/>
+      <arg value="ADD_INCLUDES=gemfirexd/odbc/GemFireXDODBCSetupInstaller/gemfirexdodbcSetup"/>
+      <arg value="OUTBASE_EX=${gemfirexd.odbc.out.dir}"/>
+      <env key="GFLIB_MODEL" value="64bit"/>
+    </exec>
+
+    <copy preservelastmodified="true" flatten="true" todir="${odbc.product.dir}/${gf.os}/64">
+      <fileset dir="${gemfirexd.odbc.out.dir}/64"> 
+        <include name="**/iodbc-installer"/>
+        <include name="**/progress-installer"/>
+        <include name="odbc-installer"/>
+      </fileset>
+    </copy> 
+ 
+    <chmod perm="a+x">
+      <fileset dir="${odbc.product.dir}/${gf.os}/64">
+        <include name="*"/>
+      </fileset>
+    </chmod> 
+  </conditional>
+</target>
+
+<target name="gfxd-build-all-odbc-installers"
+        depends="gfxd-build-odbc32-install, gfxd-build-odbc64-install"
+        if="gfxd.build.odbc"
+        description="Builds the ODBC driver tests">
+  <!-- build all the installes for odbc drivers-->
+</target> 
+
+<target name="gfxd-build-odbc-tests"
+        depends="gfxd-build-odbc-only, gfxd-build-odbc-unit-tests"
+        if="gfxd.build.odbc"
+        description="Builds the ODBC driver tests">
+  <!-- build all the tests for odbc driver-->
+</target> 
+
+<!-- build the unit tests for odbc -->
+<target name="gfxd-build-odbc-unit-tests"
+        depends="gfxd-build-odbc-unit-tests32, gfxd-build-odbc-unit-tests64 "
+        if="gfxd.build.odbc"
+        description="Builds the ODBC driver tests"/>
+
+<!-- build the 32 bit unit tests for odbc -->
+<target name="gfxd-build-odbc-unit-tests32"
+        depends="-gfxd-props, gfxd-build-odbc32-only" 
+        if="gfxd.build.odbc"
+        description="Builds the 32 bit ODBC driver tests">
+
+  <conditional if="isWindows">
+    <getdependency name="ace.dir32" type="dir" location="where/cplusplus/thirdparty/windows/ace.6.1.0_versioned_vc10" forClasspath="false"/>
+    <getdependency name="gcc.dir32" type="dir" location="where/cplusplus/gcc/windows/4.5.3" forClasspath="false"/>
+    <property name="exec.name" value="${basedir}/bin/vcvars.bat"/>
+  </conditional>
+  <conditional if="isLinux">
+    <property name="exec.name" value="${ant.make}"/>
+    <getdependency name="ace.dir32" type="dir" location="where/cplusplus/thirdparty/linux/ace.6.1.0_product_versioned" forClasspath="false"/>
+    <getdependency name="gcc.dir32" type="dir" location="where/cplusplus/gcc/linux/4.5.3" forClasspath="false"/>
+  </conditional>
+        
+  <conditional if="isMac">
+    <property name="exec.name" value="${ant.make}"/>
+    <getdependency name="ace.dir32" location="where/cplusplus/thirdparty/macosx/ace.6.1.0" forClasspath="false"/>
+    <getdependency name="gcc.dir32" location="where/cplusplus/gcc/macosx/4.8.1" forClasspath="false"/>
+  </conditional>
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/unit/32" />
+  <exec dir="${gemfirexd.odbc.tests.src.dir}/unit" executable="${exec.name}" 
+    failonerror="true">
+    <arg value="OSNAME=${os.name}"/>
+    <arg value="ACE_DIR=${ace.dir32}"/>
+    <arg value="GCC_DIR=${gcc.dir32}"/>
+    <arg value="ACELINKNAME=${acelinkname}"/> 
+    <arg value="ODBC_TEST_OUTDIR=${gemfirexd.odbc.tests.out.dir}/unit/32" />
+    <arg value="ODBC_OUT_DIR=${gemfirexd.odbc.out.dir}/32"/>
+    <env key="GFLIB_MODEL" value="32bit"/>
+  </exec>
+</target>
+
+<!-- build the 64 bit unit tests for odbc -->
+<target name="gfxd-build-odbc-unit-tests64"
+        depends="-gfxd-props, gfxd-build-odbc64-only" 
+        if="gfxd.build.odbc"
+        description="Builds the 64 bit ODBC driver tests">
+
+  <conditional if="isWindows">
+    <getdependency name="ace.dir64" type="dir" location="where/cplusplus/thirdparty/windows64/ace.6.1.0_versioned_vc10" forClasspath="false"/>
+    <getdependency name="gcc.dir64" type="dir" location="where/cplusplus/gcc/windows64/4.5.3" forClasspath="false"/>
+    <property name="exec.name" value="${basedir}/bin/vcvars64.bat"/>
+  </conditional>
+  <conditional if="isLinux">
+    <getdependency name="ace.dir64" type="dir" location="where/cplusplus/thirdparty/linux64/ace.6.1.0_product_versioned" forClasspath="false"/>
+    <getdependency name="gcc.dir64" type="dir" location="where/cplusplus/gcc/linux64/4.5.3" forClasspath="false"/>
+    <property name="exec.name" value="${ant.make}"/>
+  </conditional>
+
+  <conditional if="isMac">
+    <getdependency name="ace.dir64" type="dir" location="where/cplusplus/thirdparty/macosx64/ace.6.1.0" forClasspath="false"/>
+    <getdependency name="gcc.dir64" type="dir" location="where/cplusplus/gcc/macosx/4.8.1" forClasspath="false"/>
+    <property name="exec.name" value="${ant.make}"/>
+  </conditional>
+  
+<mkdir dir="${gemfirexd.odbc.tests.out.dir}/unit/64"/>
+  <exec dir="${gemfirexd.odbc.tests.src.dir}/unit" executable="${exec.name}" 
+    failonerror="true">
+    <arg value="OSNAME=${os.name}"/>
+    <arg value="ACE_DIR=${ace.dir64}"/>
+    <arg value="GCC_DIR=${gcc.dir64}"/>
+    <arg value="ACELINKNAME=${acelinkname}"/>
+    <arg value="ODBC_OUT_DIR=${gemfirexd.odbc.out.dir}/64"/>      
+    <arg value="ODBC_TEST_OUTDIR=${gemfirexd.odbc.tests.out.dir}/unit/64" />
+    <env key="GFLIB_MODEL" value="64bit"/>
+  </exec>
+</target>
+
+<!-- build the odbc tests with ODBC driver manager -->
+<target name="gfxd-build-odbc-dmtests"
+        depends="gfxd-build-odbc-dmtests32, gfxd-build-odbc-dmtests64 "
+        if="gfxd.build.odbc"
+        description="Builds the odbc tests with ODBC driver manager"/>
+
+<!-- build the odbc tests with ODBC driver manager -->
+<target name="gfxd-build-odbc-dmtests32"
+        depends="-gfxd-props, gfxd-build-odbc32-only" 
+        if="gfxd.build.odbc"
+        description="Builds the 32 bit odbc tests with ODBC driver manager">
+
+  <conditional if="isWindows">
+    <property name="exec.name" value="${basedir}/bin/vcvars.bat"/>
+  </conditional>
+  <conditional unless="isWindows">
+    <property name="exec.name" value="${ant.make}"/>
+  </conditional>
+
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/dmtests/32" />
+  <exec dir="${gemfirexd.odbc.tests.src.dir}/dmtests" executable="${exec.name}" 
+    failonerror="true">
+    <arg value="OSNAME=${os.name}"/>
+    <arg value="ODBC_TEST_OUTDIR=${gemfirexd.odbc.tests.out.dir}/dmtests/32" />
+    <arg value="ODBC_OUT_DIR=${gemfirexd.odbc.out.dir}/32"/>
+    <env key="GFLIB_MODEL" value="32bit"/>
+  </exec>
+</target>
+
+<!-- build the odbc tests with ODBC driver manager -->
+<target name="gfxd-build-odbc-dmtests64"
+        depends="-gfxd-props, gfxd-build-odbc64-only" 
+        if="gfxd.build.odbc"
+        description="Builds the 64 bit odbc tests with ODBC driver manager">
+
+  <conditional if="isWindows">
+    <property name="exec.name" value="${basedir}/bin/vcvars64.bat"/>
+  </conditional>
+  <conditional unless="isWindows">
+    <property name="exec.name" value="${ant.make}"/>
+  </conditional>
+        
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/dmtests/64"/>
+  <exec dir="${gemfirexd.odbc.tests.src.dir}/dmtests" executable="${exec.name}" 
+    failonerror="true">
+    <arg value="OSNAME=${os.name}"/>
+    <arg value="ODBC_OUT_DIR=${gemfirexd.odbc.out.dir}/64"/>      
+    <arg value="ODBC_TEST_OUTDIR=${gemfirexd.odbc.tests.out.dir}/dmtests/64" />
+    <env key="GFLIB_MODEL" value="64bit"/>
+  </exec>
+</target>
+
+<target name="gfxd-run-odbc-tests"
+        depends="-gfxd-props, gfxd-compile-tests, gfxd-build-odbc-only"
+        if="gfxd.build.odbc"
+        description="Test ODBC by running JDBC tests using JDBC-ODBC bridge">
+
+  <property name="gemfirexd.odbc.testrun" value="true"/>
+  <mkdir dir="${gemfirexd.odbc.testdir}"/>
+  <!-- create odbcinst.ini and invoke test runs with appropriate arguments -->
+  <echo file="${gemfirexd.odbc.testdir}/odbcinst.ini" level="info">
+[GemFireXD]
+Description     = GemFireXD ODBC driver
+Driver          = ${gemfirexd.odbc.out.dir}/32/libgemfirexdodbc.so
+Setup           = ${gemfirexd.odbc.out.dir}/32/libgemfirexdodbc.so
+FileUsage       = 1
+  </echo>
+ <!-- <antcall target="gfxd-run-junit-tests"/> -->
+</target>
+
+<target name="gfxd-run-odbc-unit-tests"
+        depends="gfxd-run-odbc-unit-tests32, gfxd-run-odbc-unit-tests64"
+        if="gfxd.build.odbc"
+        description="Runs the unit tests for ODBC driver" />
+
+<target name="gfxd-run-odbc-unit-tests32"
+        depends="-gfxd-props, gfxd-build-odbc-unit-tests32"
+        if="gfxd.build.odbc"
+        description="Runs the 32 bit unit tests for ODBC driver">
+
+  <echo message="Running odbc unit tests" level="info"/>
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/results/unit/32"/>
+  <property name="odbc.unittests.results.dir" value=""/>
+ 
+  <antcall target="-gfxd-run-odbc-unit-tests-impl">
+    <param name="testresults.dir" value="${gemfirexd.odbc.tests.out.dir}/results/unit/32"/>
+    <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/32"/>
+    <param name="testout.dir" value="${gemfirexd.odbc.tests.out.dir}/unit/32"/>
+    <param name="ace.dir" value="${ace.dir32}" />
+    <param name="gcc.dir" value="${gcc.dir32}" />
+    <param name="gflib.model" value="32bit" />
+  </antcall>
+</target>
+
+<target name="gfxd-run-odbc-unit-tests64"
+        depends="-gfxd-props, gfxd-build-odbc-unit-tests64"
+        if="gfxd.build.odbc"
+        description="Runs the 64 bit unit tests for ODBC driver">
+
+  <property name="gemfirexd.odbc.testrun" value="true"/>
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/results/unit/64"/>
+  <property name="gemfirexd.odbc.testrun" value="true"/>
+ 
+
+    <antcall target="-gfxd-run-odbc-unit-tests-impl">
+      <param name="testresults.dir" value="${gemfirexd.odbc.tests.out.dir}/results/unit/64"/>
+      <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/64"/>
+      <param name="testout.dir" value="${gemfirexd.odbc.tests.out.dir}/unit/64"/>
+      <param name="ace.dir" value="${ace.dir64}" />
+      <param name="gcc.dir" value="${gcc.dir64}" />
+      <param name="gflib.model" value="64bit" />
+    </antcall>
+</target>
+
+<target depends="props" name="-gfxd-run-odbc-unit-tests-impl"
+        description="Runs the C++ tests.">
+
+  <delete dir="${testresults.dir}" quiet="true"/>
+  <mkdir dir="${testresults.dir}"/>
+  <copy preservelastmodified="true" todir="${testresults.dir}">
+    <fileset dir="${testout.dir}">
+      <include name="*"/>
+    </fileset>
+  </copy>
+    <chmod perm="a+x">
+    <fileset dir="${testresults.dir}">
+      <include name="*"/>
+    </fileset>
+  </chmod>
+
+  <property name="errorsDir" value="${testresults.dir}/failures1"/>
+  <mkdir dir="${errorsDir}"/>
+  <echo message="Running tests..." level="info"/>
+  <ant antfile="${gemfirexd.odbc.tests.src.dir}/unit/unicast.xml" dir="${testresults.dir}" target="unicast-tests" />
+</target>
+
+<target name="gfxd-run-odbc-dmtests"
+        depends="gfxd-run-odbc-dmtests32, gfxd-run-odbc-dmtests64"
+        if="gfxd.build.odbc"
+        description="Runs the tests for ODBC driver using ODBC driver manager" />
+
+<target name="gfxd-run-odbc-dmtests32"
+        depends="-gfxd-props, gfxd-build-odbc-dmtests32"
+        if="gfxd.build.odbc"
+        description="Runs the tests for ODBC driver using ODBC driver manager">
+
+  <echo message="Running odbc driver tests with ODBC driver manager" level="info"/>           
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/results/dmtests/32"/>
+    
+  <antcall target="-gfxd-run-odbc-dmtests-impl">
+    <param name="testresults.dir" value="${gemfirexd.odbc.tests.out.dir}/results/dmtests/32"/>
+    <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/32"/>
+    <param name="testout.dir" value="${gemfirexd.odbc.tests.out.dir}/dmtests/32"/>
+  </antcall>
+
+</target>
+
+<target name="gfxd-run-odbc-dmtests64"
+        depends="-gfxd-props, gfxd-build-odbc-dmtests64"
+        if="gfxd.build.odbc"
+        description="Runs the 64 bit unit tests for ODBC driver">
+
+  <echo message="Running odbc driver tests with ODBC driver manager" level="info"/>         
+  <mkdir dir="${gemfirexd.odbc.tests.out.dir}/results/dmtests/64"/>
+    
+  <antcall target="-gfxd-run-odbc-dmtests-impl">
+    <param name="testresults.dir" value="${gemfirexd.odbc.tests.out.dir}/results/dmtests/64"/>
+    <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/64"/>
+    <param name="testout.dir" value="${gemfirexd.odbc.tests.out.dir}/dmtests/64"/>
+  </antcall>
+
+</target>
+
+<target depends="props" name="-gfxd-run-odbc-dmtests-impl"
+        description="Runs the ODBC driver tests using ODBC .">
+
+  <delete dir="${testresults.dir}" quiet="true"/>
+  <mkdir dir="${testresults.dir}"/>
+  <copy preservelastmodified="true" todir="${testresults.dir}">
+    <fileset dir="${testout.dir}">
+      <include name="*"/>
+    </fileset>
+  </copy>
+  <chmod perm="a+x">
+    <fileset dir="${testresults.dir}">
+      <include name="*"/>
+    </fileset>
+  </chmod>
+  <property name="errorsDir" value="${testresults.dir}/failures1"/>
+  <mkdir dir="${errorsDir}"/>
+  <echo message="Running ODBC driver tests with driver manager..." level="info"/>
+  <ant antfile="${gemfirexd.odbc.tests.src.dir}/dmtests/odbcdmtests.xml" dir="${testresults.dir}" target="odbc-dmtests"/>
+</target>
+
+<target depends="-gfxd-props" name="gfxd-clean-odbc" >  
+  <delete dir="${gemfirexd.odbc.out.dir}" quiet="true"/>
+  <delete dir="${gemfirexd.odbc.tests.out.dir}" quiet="true"/>
+  <delete dir="${gemfirexd.product.dir}/odbc" quiet="true"/> 
+</target>
+
+<!-- END ODBC targets -->
+
+<target name="-gfxd-run-tests-parallel1" depends="-gfxd-props, -keep-going">
+  <parallel threadCount="1">
+    <antcall target="gfxd-run-harness-tests"/>
+    <antcall target="-derby-junit-all"/>
+    <antcall target="gfxd-run-integration-dunit-tests"/>
+    <antcall target="gfxd-run-parallel-junit-tests">
+      <param name="gfxd.threadcount" value="2"/>
+    </antcall>
+  </parallel>
+</target>
+<target name="-gfxd-run-tests-parallel2" depends="-gfxd-props, -keep-going">
+  <antcall target="gfxd-run-wan-dunit-tests"/>
+</target>
+<target name="-gfxd-run-tests-parallel3" depends="-gfxd-props, -keep-going">
+  <parallel threadCount="1">
+    <antcall target="-gfxd-internal-run-dunit-tests">
+      <param name="gfxd.tests.outdir" value="gemfirexd-dunit1"/>
+      <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.ddl.ConcurrencyChecksDUnit"/>
+    </antcall>
+    <antcall target="gfxd-run-backcomp-dunit-tests"/>
+  </parallel>
+</target>
+<target name="-gfxd-run-tests-parallel4" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit2"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.ddl.ConcurrencyChecksDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.ScrollableResultSetDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-tests-parallel5" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit3"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.ScrollableResultSetDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-tests-parallel6" depends="-gfxd-props, -keep-going">
+  <antcall target="gfxd-run-smoke-tests"/>
+</target>
+<target name="gfxd-run-precheckin-tests-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests-parallel1"/>
+    <antcall target="-gfxd-run-tests-parallel2"/>
+    <antcall target="-gfxd-run-tests-parallel3"/>
+    <antcall target="-gfxd-run-tests-parallel4"/>
+    <antcall target="-gfxd-run-tests-parallel5"/>
+    <antcall target="-gfxd-run-tests-parallel6"/>
+  </parallel>
+</target>
+
+<target name="gfxd-run-all-dunit-tests-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests-parallel2"/>
+    <antcall target="-gfxd-run-tests-parallel3"/>
+    <antcall target="-gfxd-run-tests-parallel4"/>
+    <antcall target="-gfxd-run-tests-parallel5"/>
+    <antcall target="gfxd-run-integration-dunit-tests"/>
+  </parallel>
+</target>
+
+<target name="gfxd-run-all-dunit-tests-nowan-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests-parallel3"/>
+    <antcall target="-gfxd-run-tests-parallel4"/>
+    <antcall target="-gfxd-run-tests-parallel5"/>
+    <antcall target="gfxd-run-integration-dunit-tests"/>
+  </parallel>
+</target>
+
+<target name="-gfxd-run-dunit-tests-parallel1" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit1"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.ddl.DeltaMergeAndIndexUpdateDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests-parallel2" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit2"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.ddl.DeltaMergeAndIndexUpdateDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.MoreSubqueryDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests-parallel3" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit3"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.MoreSubqueryDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.offheap.OffHeapStatementNodesPrunningDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests-parallel4" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit4"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.offheap.OffHeapStatementNodesPrunningDUnit"/>
+  </antcall>
+</target>
+<target name="gfxd-run-dunit-tests-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-dunit-tests-parallel1"/>
+    <antcall target="-gfxd-run-dunit-tests-parallel2"/>
+    <antcall target="-gfxd-run-dunit-tests-parallel3"/>
+    <antcall target="-gfxd-run-dunit-tests-parallel4"/>
+    <antcall target="gfxd-run-backcomp-dunit-tests"/>
+  </parallel>
+</target>
+
+<target name="-gfxd-run-tests64-parallel1" depends="-gfxd-props, -keep-going">
+  <parallel threadCount="1">
+    <antcall target="gfxd-run-harness-tests64"/>
+    <antcall target="-derby-junit-all64"/>
+    <antcall target="gfxd-run-integration-dunit-tests64"/>
+    <antcall target="gfxd-run-parallel-junit-tests64">
+      <param name="gfxd.threadcount" value="2"/>
+    </antcall>
+  </parallel>
+</target>
+<target name="-gfxd-run-tests64-parallel2" depends="-gfxd-props, -keep-going">
+  <antcall target="gfxd-run-wan-dunit-tests64"/>
+</target>
+<target name="-gfxd-run-tests64-parallel3" depends="-gfxd-props, -keep-going">
+  <parallel threadCount="1">
+    <antcall target="-gfxd-internal-run-dunit-tests64">
+      <param name="gfxd.tests.outdir" value="gemfirexd-dunit1"/>
+      <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.ddl.ConcurrencyChecksDUnit"/>
+    </antcall>
+    <antcall target="gfxd-run-backcomp-dunit-tests64"/>
+  </parallel>
+</target>
+<target name="-gfxd-run-tests64-parallel4" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit2"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.ddl.ConcurrencyChecksDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.ScrollableResultSetDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-tests64-parallel5" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit3"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.ScrollableResultSetDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-tests64-parallel6" depends="-gfxd-props, -keep-going">
+  <antcall target="gfxd-run-smoke-tests64"/>
+</target>
+<target name="gfxd-run-precheckin-tests64-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests64-parallel1"/>
+    <antcall target="-gfxd-run-tests64-parallel2"/>
+    <antcall target="-gfxd-run-tests64-parallel3"/>
+    <antcall target="-gfxd-run-tests64-parallel4"/>
+    <antcall target="-gfxd-run-tests64-parallel5"/>
+    <antcall target="-gfxd-run-tests64-parallel6"/>
+  </parallel>
+</target>
+
+<target name="gfxd-run-all-dunit-tests64-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests64-parallel2"/>
+    <antcall target="-gfxd-run-tests64-parallel3"/>
+    <antcall target="-gfxd-run-tests64-parallel4"/>
+    <antcall target="-gfxd-run-tests64-parallel5"/>
+    <antcall target="gfxd-run-integration-dunit-tests64"/>
+  </parallel>
+</target>
+
+<target name="gfxd-run-all-dunit-tests64-nowan-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-tests64-parallel3"/>
+    <antcall target="-gfxd-run-tests64-parallel4"/>
+    <antcall target="-gfxd-run-tests64-parallel5"/>
+    <antcall target="gfxd-run-integration-dunit-tests64"/>
+  </parallel>
+</target>
+
+<target name="-gfxd-run-dunit-tests64-parallel1" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit1"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.ddl.DeltaMergeAndIndexUpdateDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests64-parallel2" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit2"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.ddl.DeltaMergeAndIndexUpdateDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.MoreSubqueryDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests64-parallel3" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit3"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.MoreSubqueryDUnit"/>
+    <param name="dunitUptoTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.offheap.OffHeapStatementNodesPrunningDUnit"/>
+  </antcall>
+</target>
+<target name="-gfxd-run-dunit-tests64-parallel4" depends="-gfxd-props, -keep-going">
+  <antcall target="-gfxd-internal-run-dunit-tests64">
+    <param name="gfxd.tests.outdir" value="gemfirexd-dunit4"/>
+    <param name="dunitFromTestClass" value="com.pivotal.gemfirexd.internal.engine.distributed.offheap.OffHeapStatementNodesPrunningDUnit"/>
+  </antcall>
+</target>
+<target name="gfxd-run-dunit-tests64-parallel" depends="-gfxd-props, -keep-going">
+  <parallel>
+    <antcall target="-gfxd-run-dunit-tests64-parallel1"/>
+    <antcall target="-gfxd-run-dunit-tests64-parallel2"/>
+    <antcall target="-gfxd-run-dunit-tests64-parallel3"/>
+    <antcall target="-gfxd-run-dunit-tests64-parallel4"/>
+    <antcall target="gfxd-run-backcomp-dunit-tests64"/>
+  </parallel>
+</target>
+
+<target name="-gfxd-internal-run-junit-tests"
+        depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <run-junit testGroup="${gfxd.junit.testlist}" extra-classpath-ref="gemfirexd.tests.classpath" junitTestsDir="${gemfirexd.tests.classes.dir}" suite="gemfirexd-junit" results="${tests.results.dir}/gemfirexd-junit" extra.jtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.junit}" test-mode-non-tx="${test-mode-non-tx}"/>
+</target>
+
+<target name="-gfxd-internal-run-junit-tests64"
+        depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <run-junit testGroup="${gfxd.junit.testlist}" jvm="${unittest.java64}" dprop="${d64prop}" extra-classpath-ref="gemfirexd.tests.classpath" junitTestsDir="${gemfirexd.tests.classes.dir}" suite="gemfirexd-junit" results="${tests.results64.dir}/gemfirexd-junit" extra.jtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.junit}" test-mode-non-tx="${test-mode-non-tx}"/>
+</target>
+
+<target name="gfxd-run-parallel-junit-tests" depends="-keep-going" 
+        description="Run all GemFireXD junit tests parallel in 8 (balanced) groups.">
+  <property name="jvm" value="${unittest.java32}"/>
+  <property name="dprop" value="${d32prop}"/>
+  <property name="gfxd.threadcount" value="8"/>
+  <antcall target="-gfxdRunParallelJUnit">
+    <param name="gfxd.threadcount" value="${gfxd.threadcount}"/>
+  </antcall>
+</target>
+
+<target name="gfxd-run-parallel-junit-tests64" depends="-keep-going"
+        description="Run all GemFireXD junit tests parallel in 8 (balanced) groups in 64-bit jvm.">
+  <property name="jvm" value="${unittest.java64}"/>
+  <property name="dprop" value="${d64prop}"/>
+  <property name="gfxd.threadcount" value="8"/>
+  <antcall target="-gfxdRunParallelJUnit64">
+    <param name="gfxd.threadcount" value="${gfxd.threadcount}"/>
+  </antcall>
+</target>
+
+<target name="-gfxdRunParallelJUnit"
+        depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <property name="gfxd.jresults" value="${tests.results.dir}/gemfirexd-junit-parallel"/>
+  <property name="gfxd.threadcount" value="8"/>
+  <delete dir="${gfxd.jresults}" quiet="true"/>
+
+  <parallel threadCount="${gfxd.threadcount}">
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="1" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="2" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="3" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="4" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="5" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="6" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="7" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="8" />
+    </antcallback>
+  </parallel>
+  <error-grep sourceDir="${gfxd.jresults}" threshold="${threshold.gfxd.junit}"/>
+  <conditional if="failed">
+    <echo message="FAILED: GemFireXD junit tests failures in ${gfxd.jresults}/site*/failures" level="error"/>
+    <echo append="true" file="${gfxd.jresults}/TestFailures" message="FAILED: GemFireXD junit tests failures in ${gfxd.jresults}/site*/failures" level="error"/>
+    <fail message="FAILED: One or more GemFireXD junit tests failed"/>
+  </conditional>
+  <conditional unless="failed">
+    <echo level="info" message="Info: all junit tests ran successfully."/>
+    <delete dir="${gfxd.jresults}/site*/failures" quiet="true"/>
+  </conditional>
+</target>
+
+<target name="-gfxdRunParallelJUnit64"
+        depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <property name="gfxd.jresults" value="${tests.results64.dir}/gemfirexd-junit-parallel"/>
+  <property name="gfxd.threadcount" value="8"/>
+  <delete dir="${gfxd.jresults}" quiet="true"/>
+
+  <parallel threadCount="${gfxd.threadcount}">
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="1" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="2" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="3" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="4" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="5" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="6" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="7" />
+    </antcallback>
+    <antcallback target="-gfxdParallelJUnit" return="failed">
+      <param name="junit.division.total" value="8" />
+      <param name="junit.division.num" value="8" />
+    </antcallback>
+  </parallel>
+  <error-grep sourceDir="${gfxd.jresults}" threshold="${threshold.gfxd.junit}"/>
+  <conditional if="failed">
+    <echo message="FAILED: GemFireXD junit tests failures in ${gfxd.jresults}/site*/failures" level="error"/>
+    <echo append="true" file="${gfxd.jresults}/TestFailures" message="FAILED: GemFireXD junit tests failures in ${gfxd.jresults}/site*/failures" level="error"/>
+    <fail message="FAILED: One or more GemFireXD junit tests failed"/>
+  </conditional>
+  <conditional unless="failed">
+    <echo level="info" message="Info: all junit tests ran successfully."/>
+    <delete dir="${gfxd.jresults}/site*/failures" quiet="true"/>
+  </conditional>
+</target>
+
+<target name="-gfxdParallelJUnit"
+        depends="-gfxd-props, -gfxd-define-test-groups">
+  <property name="junit.division.total" value="1"/>
+  <property name="junit.division.num" value="1"/>
+  <run-parallel-junit-part testGroup="${gfxd.junit.testlist}" jvm="${jvm}" dprop="${dprop}" extra-classpath-ref="gemfirexd.tests.classpath" junitTestsDir="${gemfirexd.tests.classes.dir}" suite-prefix="gemfirexd-junit-parallel" results-prefix="${gfxd.jresults}" extra.jtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.junit}"/>
+</target>
+
+<target name="-gfxd-internal-run-dunit-tests"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <property name="gfxd.tests.outdir" value="gemfirexd-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+  <delete dir="${tests.results.dir}/${gfxd.tests.outdir}"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true} -Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results.dir}/${gfxd.tests.outdir}" dunit.testlist="${gfxd.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results.dir}/${gfxd.tests.outdir}/dunit-tests.bt" confFile="${tests.results.dir}/${gfxd.tests.outdir}/dunit-tests.conf"/>
+  <unitTest-battery type="${gfxd.tests.outdir}" bt.file="${tests.results.dir}/${gfxd.tests.outdir}/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results.dir}/${gfxd.tests.outdir}"/>
+</target>
+
+<target name="-gfxd-internal-run-dunit-tests64"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <property name="gfxd.tests.outdir" value="gemfirexd-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+  <delete dir="${tests.results64.dir}/${gfxd.tests.outdir}"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true} -Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results64.dir}/${gfxd.tests.outdir}" dunit.testlist="${gfxd.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results64.dir}/${gfxd.tests.outdir}/dunit-tests.bt" confFile="${tests.results64.dir}/${gfxd.tests.outdir}/dunit-tests.conf"/>
+  <unitTest-battery type="${gfxd.tests.outdir}" jvm="${unittest.java64}" dprop="${d64prop}" bt.file="${tests.results64.dir}/${gfxd.tests.outdir}/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results64.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results64.dir}/${gfxd.tests.outdir}"/>
+</target>
+
+<target name="-gfxd-internal-run-backcomp-dunit-tests"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <property name="gfxd.backcomp.tests.outdir" value="gemfirexd-backcomp-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+  <delete dir="${tests.results.dir}/${gfxd.backcomp.tests.outdir}"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true} -Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results.dir}/${gfxd.backcomp.tests.outdir}" dunit.testlist="${gfxd.backcomp.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results.dir}/${gfxd.backcomp.tests.outdir}/dunit-tests.bt" confFile="${tests.results.dir}/${gfxd.backcomp.tests.outdir}/dunit-tests.conf"/>
+  <unitTest-battery type="${gfxd.backcomp.tests.outdir}" bt.file="${tests.results.dir}/${gfxd.backcomp.tests.outdir}/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results.dir}/${gfxd.backcomp.tests.outdir}"/>
+</target>
+
+<target name="-gfxd-internal-run-backcomp-dunit-tests64"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <delete dir="${tests.results64.dir}/gemfirexd-backcomp-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value=""/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results64.dir}/gemfirexd-backcomp-dunit" dunit.testlist="${gfxd.backcomp.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}"/>
+  <unitTest-battery type="gemfirexd-backcomp-dunit" jvm="${unittest.java64}" dprop="${d64prop}" bt.file="${tests.results64.dir}/gemfirexd-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results64.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results64.dir}/gemfirexd-backcomp-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-integration-dunit-tests"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <delete dir="${tests.results.dir}/gemfirexd-integration-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value=""/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results.dir}/gemfirexd-integration-dunit" dunit.testlist="${gfxd.integration.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.integration.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results.dir}/gemfirexd-integration-dunit/dunit-tests.bt" confFile="${tests.results.dir}/gemfirexd-integration-dunit/dunit-tests.conf"/>
+  <unitTest-battery type="gemfirexd-integration-dunit" bt.file="${tests.results.dir}/gemfirexd-integration-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results.dir}/gemfirexd-integration-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-integration-dunit-tests64"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <delete dir="${tests.results64.dir}/gemfirexd-integration-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value=""/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results64.dir}/gemfirexd-integration-dunit" dunit.testlist="${gfxd.integration.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.integration.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results64.dir}/gemfirexd-integration-dunit/dunit-tests.bt" confFile="${tests.results64.dir}/gemfirexd-integration-dunit/dunit-tests.conf"/>
+  <unitTest-battery type="gemfirexd-integration-dunit" jvm="${unittest.java64}" dprop="${d64prop}" bt.file="${tests.results64.dir}/gemfirexd-integration-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results64.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results64.dir}/gemfirexd-integration-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-wan-dunit-tests"
+  depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <delete dir="${tests.results.dir}/gemfirexd-wan-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value=""/>
+  </conditional>
+  <dunit-generate-hydra-config dunitOutDir="${tests.results.dir}/gemfirexd-wan-dunit" dunit.testlist="${gfxd.wan.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results.dir}/gemfirexd-wan-dunit/dunit-tests.bt" confFile="${tests.results.dir}/gemfirexd-wan-dunit/dunit-tests.conf" includeFile="$JTESTS/dunit/impl/dunitWan.inc"  systemCount="3"/>
+  <unitTest-battery type="gemfirexd-wan-dunit" bt.file="${tests.results.dir}/gemfirexd-wan-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results.dir}/gemfirexd-wan-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-wan-dunit-tests64" depends="-gfxd-props, -gfxd-define-test-groups, -keep-going">
+  <delete dir="${tests.results64.dir}/gemfirexd-wan-dunit"/>
+  <property name="bt.removePassedTest" value="true"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value=""/>
+  </conditional>
+  <dunit-generate-hydra-config dunitOutDir="${tests.results64.dir}/gemfirexd-wan-dunit" dunit.testlist="${gfxd.wan.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results64.dir}/gemfirexd-wan-dunit/dunit-tests.bt" confFile="${tests.results64.dir}/gemfirexd-wan-dunit/dunit-tests.conf" includeFile="$JTESTS/dunit/impl/dunitWan.inc"  systemCount="3"/>
+  <unitTest-battery type="gemfirexd-wan-dunit" jvm="${unittest.java64}" dprop="${d64prop}" bt.file="${tests.results64.dir}/gemfirexd-wan-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results64.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results64.dir}/gemfirexd-wan-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-hdfs-junit-tests" depends="-gfxd-props, -gfxd-define-test-groups, -define-test-macros, -keep-going">
+  <run-junit testGroup="${gfxd.hdfs.junit.testlist}" extra-classpath-ref="gemfirexd.tests.classpath" junitTestsDir="${gemfirexd.tests.classes.dir}" suite="gemfirexd-junit" results="${tests.results.dir}/gemfirexd-junit" extra.jtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.junit}"/>
+</target>
+
+<target name="-gfxd-internal-run-hdfs-dunit-tests" 
+    depends="-gfxd-props, -gfxd-define-test-groups, -define-test-macros, -keep-going">
+
+  <delete dir="${tests.results.dir}/gemfirexd-dunit"/>
+
+  <conditional if="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dgemfirexd.debug.true=${gemfirexd.debug.true} -Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+  <conditional unless="gemfirexd.debug.true">
+    <property name="gemfirexd.debug" value="-Dtest.use-odbc-bridge=${gemfirexd.odbc.testrun}"/>
+  </conditional>
+
+  <dunit-generate-hydra-config dunitOutDir="${tests.results.dir}/gemfirexd-dunit" dunit.testlist="${gfxd.hdfs.dunit.testlist}" dunit.classes.dir="${gemfirexd.tests.classes.dir}" extra-classpath-ref="gemfirexd.dunit.tests.classpath" extra-dunit-jvm-args="${gemfirexd.debug}" btFile="${tests.results.dir}/gemfirexd-dunit/dunit-tests.bt" confFile="${tests.results.dir}/gemfirexd-dunit/dunit-tests.conf"/>
+  <unitTest-battery type="gemfirexd-dunit" bt.file="${tests.results.dir}/gemfirexd-dunit/dunit-tests.bt" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.dunit}"/>
+  <delete-disk-store-files dir="${tests.results.dir}/gemfirexd-dunit"/>
+</target>
+
+<target name="-gfxd-internal-run-smoke-tests"
+  depends="-gfxd-props, -gfxd-define-test-groups, -define-test-macros, -keep-going">
+  <!-- too many suspect strings to run the error-grep. This needs attention -->
+  <property name="skip.error.grep" value="true"/>
+  <delete dir="${tests.results.dir}/gfxd-smoke"/>
+  <mkdir dir="${tests.results.dir}/gfxd-smoke"/>
+  <touch file="${tests.results.dir}/gfxd-smoke/local.conf"/>
+  <echo append="true"
+    file="${tests.results.dir}/gfxd-smoke/local.conf" level="info">
+hydra.VmPrms-extraClassPaths        +=   "${derby.insane.jar}";
+hydra.VmPrms-extraClassPaths        +=   "${derbynet.insane.jar}";
+hydra.VmPrms-extraClassPaths        +=   "${derbyclient.insane.jar}";
+hydra.gemfirexd.FabricServerPrms-lockMemory = false; // smokes require too much memory to lock it
+  </echo>
+  <property name="bt.removePassedTest" value="true"/>
+  <property name="provideXMLReport" value="true"/>
+  <unitTest-battery type="gfxd-smoke" bt.file="${gfxd.smoketest.bt}" skipHydraClean="true" resultsDir="${tests.results.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.smoke}"/>
+</target>
+
+<target name="-gfxd-internal-run-smoke-tests64"
+  depends="-gfxd-props, -gfxd-define-test-groups, -define-test-macros, -keep-going">
+  <!-- too many suspect strings to run the error-grep. This needs attention -->
+  <property name="skip.error.grep" value="true"/>
+  <delete dir="${tests.results64.dir}/gfxd-smoke"/>
+  <mkdir dir="${tests.results64.dir}/gfxd-smoke"/>
+  <touch file="${tests.results64.dir}/gfxd-smoke/local.conf"/>
+  <echo append="true"
+    file="${tests.results64.dir}/gfxd-smoke/local.conf" level="info">
+hydra.VmPrms-extraClassPaths        +=   "${derby.insane.jar}";
+hydra.VmPrms-extraClassPaths        +=   "${derbynet.insane.jar}";
+hydra.VmPrms-extraClassPaths        +=   "${derbyclient.insane.jar}";
+  </echo>
+  <property name="bt.removePassedTest" value="true"/>
+  <property name="provideXMLReport" value="true"/>
+  <unitTest-battery type="gfxd-smoke" jvm="${unittest.java64}" dprop="${d64prop}" bt.file="${gfxd.smoketest.bt}" skipHydraClean="true" resultsDir="${tests.results64.dir}" extra.dtests.dir="${gemfirexd.tests.classes.dir}" threshold="${threshold.gfxd.smoke}"/>
+</target>
+
+<target depends="-gfxd-props, -gfxd-define-classpath-refs"
+  name="-gfxd-define-test-groups">
+  <conditional if="gfxd.junit.testcase">
+    <property name="gfxd.junit.testlist" value="gemfirexd-junit-custom-tests"/>
+  </conditional>
+  <property name="gfxd.junit.testlist" value="gemfirexd-junit-default-tests"/>
+  <!-- gemfirexd-junit -->
+  <patternset id="gemfirexd-junit-default-tests">
+    <include name="**/*Test.class"/>
+    <exclude name="${gfxd.junit.excludes}" if="gfxd.junit.excludes"/>
+  </patternset>
+  <patternset id="gemfirexd-junit-custom-tests">
+    <include name="${gfxd.junit.testcase}"/>
+    <exclude name="${gfxd.junit.excludes}" if="gfxd.junit.excludes"/>
+  </patternset>
+  <!-- gemfirexd-dunit -->
+  <conditional if="gfxd.dunit.testcase">
+    <property name="gfxd.dunit.testlist" value="gemfirexd-dunit-custom-tests"/>
+  </conditional>
+  <property name="gfxd.dunit.testlist" value="gemfirexd-dunit-default-tests"/>
+  <patternset id="gemfirexd-dunit-default-tests">
+    <include name="**/*DUnit.class"/>
+    <exclude name="com/pivotal/gemfirexd/wan/**/*DUnit.class"/>
+    <exclude name="com/pivotal/gemfirexd/integration/**/*DUnit.class"/>
+    <!-- exclude backward compatibility tests since they will run as a separate target -->
+    <exclude name="com/pivotal/gemfirexd/BackwardCompatability*DUnit.class"/>
+    <exclude name="${gfxd.dunit.excludes}" if="gfxd.dunit.excludes"/>
+  </patternset>
+  <patternset id="gemfirexd-dunit-custom-tests">
+    <include name="${gfxd.dunit.testcase}"/>
+    <exclude name="${gfxd.dunit.excludes}" if="gfxd.dunit.excludes"/>
+  </patternset>
+  <property name="gfxd.backcomp.dunit.testlist" value="gemfirexd-backcomp-dunit-tests"/>
+  <patternset id="gemfirexd-backcomp-dunit-tests">
+    <include name="com/pivotal/gemfirexd/BackwardCompatability*DUnit.class"/>
+  </patternset>
+ <!-- gemfirexd-integration-dunit -->
+  <conditional if="gfxd.integration.dunit.testcase">
+    <property name="gfxd.integration.dunit.testlist" value="gemfirexd-integration-dunit-custom-tests"/>
+  </conditional>
+  <property name="gfxd.integration.dunit.testlist" value="gemfirexd-integration-dunit-default-tests"/>
+  <patternset id="gemfirexd-integration-dunit-default-tests">
+    <include name="com/pivotal/gemfirexd/integration/**/*DUnit.class"/>
+    <exclude name="${gfxd.integration.dunit.excludes}" if="gfxd.integration.dunit.excludes"/>
+  </patternset>
+  <patternset id="gemfirexd-integration-dunit-custom-tests">
+    <include name="${gfxd.integration.dunit.testcase}"/>
+    <exclude name="${gfxd.integration.dunit.excludes}" if="gfxd.integration.dunit.excludes"/>
+  </patternset>
+  <!-- gemfirexd-wan-dunit -->
+  <conditional if="gfxd.wan.dunit.testcase">
+    <property name="gfxd.wan.dunit.testlist" value="gemfirexd-wan-dunit-custom-tests"/>
+  </conditional>
+  <property name="gfxd.wan.dunit.testlist" value="gemfirexd-wan-dunit-default-tests"/>
+  <patternset id="gemfirexd-wan-dunit-default-tests">
+    <include name="com/pivotal/gemfirexd/wan/**/*DUnit.class"/>
+    <exclude name="${gfxd.wan.dunit.excludes}" if="gfxd.wan.dunit.excludes"/>
+  </patternset>
+  <patternset id="gemfirexd-wan-dunit-custom-tests">
+    <include name="${gfxd.wan.dunit.testcase}"/>
+    <exclude name="${gfxd.wan.dunit.excludes}" if="gfxd.wan.dunit.excludes"/>
+  </patternset>
+  <!-- gemfirexd-hdfs-dunit-->
+  <property name="gfxd.hdfs.dunit.testlist" value="gemfirexd-hdfs-dunit-default-tests"/>
+  <patternset id="gemfirexd-hdfs-dunit-default-tests">
+    <include name="com/pivotal/gemfirexd/ddl/CreateHDFSStoreDUnit.class"/>
+    <include name="com/pivotal/gemfirexd/ddl/AlterHDFSStoreDUnit.class"/>
+    <include name="com/pivotal/gemfirexd/transactions/TransactionRRHDFSTableDUnit.class"/>
+    <include name="com/pivotal/gemfirexd/insert/InsertUpdateHDFSDUnit.class"/>
+  </patternset>
+  <!-- gemfirexd-hdfs-junit-->
+  <property name="gfxd.hdfs.junit.testlist" value="gemfirexd-hdfs-junit-default-tests"/>
+  <patternset id="gemfirexd-hdfs-junit-default-tests">
+    <include name="com/pivotal/gemfirexd/jdbc/CreateHDFSStoreTest.class"/>
+    <include name="com/pivotal/gemfirexd/jdbc/AlterHDFSStoreTest.class"/>
+    <include name="com/pivotal/gemfirexd/internal/hadoop/*Test.class"/>
+    <include name="com/pivotal/gemfirexd/internal/hadoop/offheap/*Test.class"/>
+    <include name="com/pivotal/gemfirexd/internal/engine/hadoop/mapred/*Test.class"/>
+    <include name="com/pivotal/gemfirexd/internal/engine/hadoop/mapred/hive/*Test.class"/>
+    <include name="com/pivotal/gemfirexd/internal/engine/hadoop/mapreduce/*Test.class"/>
+  </patternset>
+</target>
+
+<target depends="define-classpath-refs" name="-gfxd-define-classpath-refs">
+  <path id="gemfirexd.tests.classpath">
+     <pathelement location="${osbuild.dir}/GemFireXDTests/classes"/>
+     <pathelement location="${gemfirexd.unsealed.jar}"/>
+     <pathelement location="${gemfirexd-client.jar}"/>
+     <pathelement location="${gemfirexd-tools.jar}"/>
+     <pathelement location="${gemfirexd.ddlutils.classes.dir}"/>
+     <pathelement location="${commons-cli.jar}"/>
+     <pathelement location="${derbyTesting.jar}"/>
+     <pathelement location="${pxf.jar}"/>
+     <fileset dir="${gemfirexd.ddlutils.lib.dir}">
+       <include name="*.jar"/>
+     </fileset>
+  </path>
+  <path id="gemfirexd.dunit.tests.classpath">
+     <pathelement location="${osbuild.dir}/GemFireXDTests/classes"/>
+     <pathelement location="${gemfirexd.unsealed.jar}"/>
+     <pathelement location="${gemfirexd-client.jar}"/>
+     <pathelement location="${gemfirexd-tools.jar}"/>
+     <pathelement location="${gemfirexd.ddlutils.classes.dir}"/>
+     <pathelement location="${commons-cli.jar}"/>
+     <pathelement location="${derbyTesting.jar}"/>
+     <pathelement location="${derbynet.jar}"/>
+     <pathelement location="${derbyclient.jar}"/>
+     <pathelement location="${oracle.jdbc4.jar}"/>
+     <fileset dir="${gemfirexd.ddlutils.lib.dir}">
+       <include name="*.jar"/>
+     </fileset>
+  </path>
+  <path id="gemfirexd.integration.dunit.tests.classpath">
+     <fileset dir="${hibernate.414.dir}">
+       <include name="*.jar"/>
+     </fileset>
+     <pathelement location="${tests.out.dir}/classes/junit.jar"/>
+     <pathelement location="${tests.classes.dir}"/>
+     <pathelement location="${osbuild.dir}/GemFireXDTests/classes"/>
+     <pathelement location="${log4j.jar}"/>
+     <pathelement location="${osbuild.dir}/GemFireXDTests/classes/integration/hibernate"/>
+     <pathelement location="${product.lib.dir}/${gemfire.jar.name}"/>
+     <pathelement location="${gemfirexd-client.jar}"/>
+     <pathelement location="${gemfirexd.hibernate.dialect.jar}"/>
+     <pathelement location="${gemfirexd.unsealed.jar}"/>
+     <pathelement location="${gemfirexd.out.dir}/classes"/>
+     <pathelement location="${derby.jar}"/>
+     <pathelement location="${derbynet.jar}"/>
+     <pathelement location="${derbyclient.jar}"/>
+  </path>
+</target>
+
+  <!-- Packaging and Distribution Targets -->
+  
+<target name="-gfxd-internal-build-installer" depends="-gfxd-props,-define-installer-macro">
+  <installer prefix="sf_"
+             product="GemFireXD"
+             version="${gemfirexd.version}"
+             product.dir="${gemfirexd.product.dir}"
+             installer.classname="GemFireXDZipSelfExtractor"
+             installer.size="42"
+  />
+</target>
+
+<target name="-gfxd-internal-build-vf-installer" depends="-gfxd-props,-define-installer-macro">
+  <installer prefix="vf_sf_"
+             product="vFabric_GemFireXD"
+             version="${gemfirexd.version}"
+             product.dir="${gemfirexd.product.dir}"
+             installer.classname="GemFireXDZipSelfExtractor"
+             installer.size="42"
+  />
+</target>
+
+<target name="-gfxd-internal-build-vf-dist" depends="-gfxd-props, -define-zipdist-macro">
+  <property file="${build.dir}/build.number"/>
+  <zipdist prefix="vf_sf_"
+           product="vFabric_GemFireXD"
+           version="${gemfirexd.version}"
+           bnumber="${build.number}"
+           product.dir="${gemfirexd.product.dir}"
+  />
+</target>
+
+<target name="-gfxd-internal-build-zip-dist" depends="-gfxd-props, -define-zipdist-macro">
+  <property file="${build.dir}/build.number"/>
+  <zipdist prefix="${gfxd.zip.prefix}"
+           product="${gemfirexd.product.formalname}"
+           version="${gemfirexd.version}"
+           bnumber="${build.number}"
+           product.dir="${gemfirexd.product.dir}"
+  />
+</target>
+
+  <target name="-gfxd-internal-build-rpms" depends="-gfxd-props">
+
+    <!-- Import build.number for using with RPM name -->
+    <property file="${build.dir}/build.number"/>
+
+    <!-- Clean current RPM installer directory -->
+    <delete dir="${osbuild.dir}/${gfxd_rpmbuild.dir}"/>
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}"/>
+
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/BUILD"/>
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/SOURCES"/>
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/SPECS"/>
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS"/>
+ 
+    <property name="gfxd_rpminstall.dir" value="${gemfirexd.product.formalname}_${gfxdversion}"/>
+ 
+    <!-- Copy files to SOURCES directory -->
+    <if>
+      <available type="dir" file="${gemfirexd.product.dir}"/>
+      <then>
+        <echo level="info" message="Found ${gemfirexd.product.dir}"/>
+        <copy todir="${osbuild.dir}/${gfxd_rpmbuild.dir}/SOURCES/${gfxd_rpminstall.dir}">
+          <fileset dir="${gemfirexd.product.dir}"/>
+        </copy>
+      </then>
+      <else>
+        <fail message="${gemfirexd.product.dir} not found. Please run gfxd-build-product target"/>
+      </else>
+    </if>
+
+    <antcall target="-gfxd-internal-build-phd-rpm"/>
+    <antcall target="-gfxd-internal-build-sa-rpm"/>
+  </target>
+
+  <target name="-gfxd-internal-build-phd-rpm" depends="-gfxd-props">
+  
+    <if>
+      <antversion property="ant.version" atleast="1.8"/>
+      <then>
+        <antcall target="-gfxd-internal-build-rpm-os">
+          <param name="os" value="el6"/>
+          <param name="rpm.dist" value="gfxd"/>
+        </antcall>
+        <antcall target="-gfxd-internal-build-rpm-os">
+          <param name="os" value="el6"/>
+          <param name="rpm.dist" value="gfxd-ambari"/>
+        </antcall>
+      </then>
+      <else>
+        <fail message="RPM installer must run with Ant Version >= 1.8.0. Currently running Ant Version: ${ant.version}. Exiting build..."/>
+      </else>
+    </if>
+    
+  </target>
+  
+  <target name="-gfxd-internal-build-sa-rpm" depends="-gfxd-props">
+    
+    <if>
+      <antversion property="ant.version" atleast="1.8"/>
+      <then>
+        <antcall target="-gfxd-internal-build-rpm-os">
+          <param name="os" value="el5"/>
+          <param name="rpm.dist" value="gemfirexd"/>
+        </antcall>
+        <antcall target="-gfxd-internal-build-rpm-os">
+          <param name="os" value="el6"/>
+          <param name="rpm.dist" value="gemfirexd"/>
+        </antcall>
+        <antcall target="-gfxd-internal-build-rpm-os">
+          <param name="os" value="el7"/>
+          <param name="rpm.dist" value="gemfirexd"/>
+        </antcall>
+      </then>
+      <else>
+        <fail message="RPM installer must run with Ant Version >= 1.8.0. Currently running Ant Version: ${ant.version}. Exiting build..."/>
+      </else>
+    </if>
+    
+  </target>
+
+  <!-- Target must be run with ANT >= 1.8.0 -->
+  <target name="-gfxd-internal-build-rpm-os">
+
+    <delete dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/BUILD"/>
+    <mkdir dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/BUILD"/>
+    <copy todir="${osbuild.dir}/${gfxd_rpmbuild.dir}/BUILD">
+      <fileset dir="release/installer/rpm">
+        <include name="gemfirexd.properties"/>
+        <include name="${rpm.dist}.sysconfig"/>
+        <include name="${rpm.dist}.init"/>
+      </fileset>
+    </copy>
+    <!-- Copy RPM SPEC file to RPM SPECS directory -->
+    <copy todir="${osbuild.dir}/${gfxd_rpmbuild.dir}/SPECS">
+      <fileset dir="release/installer/rpm">
+        <include name="${rpm.dist}.${os}.spec"/>
+      </fileset>
+    </copy>
+
+    <replace dir="${osbuild.dir}/${gfxd_rpmbuild.dir}" token="@RPM_DATE@"
+             value="${rpm.date}" summary="yes"/>    
+    <replace dir="${osbuild.dir}/${gfxd_rpmbuild.dir}" token="@VERSION@"
+             value="${gemfirexd.version}" summary="yes"/>
+    <replace dir="${osbuild.dir}/${gfxd_rpmbuild.dir}" token="@JARNAME@"
+              value="${gfxd_rpminstall.dir}" summary="yes"/>
+    <replace dir="${osbuild.dir}/${gfxd_rpmbuild.dir}" token="@BUILD_NUMBER@"
+              value="${build.number}" summary="yes"/>
+
+    <!-- Build RPM -->
+    <rpm specFile="${rpm.dist}.${os}.spec"
+         topDir="${osbuild.dir}/${gfxd_rpmbuild.dir}"
+         cleanBuildDir="true"
+         failOnError="true"/>
+
+    <if>
+      <available file="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS/x86_64" type="dir"/>
+      <then>
+        <!-- Copy RPM to gfxd_distribution directory -->
+        <copy todir="${osbuild.dir}/${gfxd.zip.prefix}distribution/">
+          <fileset dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS/x86_64">
+            <include name="*.rpm"/>
+          </fileset>
+        </copy>
+        <delete dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS/x86_64"/>
+      </then>
+      <else>
+        <!-- Copy RPM to gfxd_distribution directory -->
+        <copy todir="${osbuild.dir}/${gfxd.zip.prefix}distribution/">
+          <fileset dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS/noarch">
+            <include name="*.rpm"/>
+          </fileset>
+        </copy>
+        <delete dir="${osbuild.dir}/${gfxd_rpmbuild.dir}/RPMS/noarch"/>
+      </else>
+    </if>
+
+  </target>
+
+  <!-- Needs RPM distribution built first -->
+  <target name="-gfxd-internal-build-deb-dist" depends="-gfxd-props">
+
+    <!-- Import build.number for using with RPM name -->
+    <property file="${build.dir}/build.number"/>
+    
+    <exec executable="lsb_release" outputproperty="linuxDistro">
+      <arg value="-i"/>
+    </exec>
+
+    <if>
+      <not>
+        <contains string="${linuxDistro}" substring="Ubuntu"/>
+      </not>
+      <then>
+        <fail message="Must run target on Ubuntu system"/>
+      </then>
+    </if>
+
+    <!-- This should exist but create to make sure -->
+    <mkdir dir="${osbuild.dir}/${gfxd.zip.prefix}distribution"/>
+
+    <property name="deb.tmp.dir" value="${osbuild.dir}/${gfxd_installer.dir}_deb_tmp"/>
+    <property name="deb.alien.dir" value="${deb.tmp.dir}/alien"/>
+
+    <!-- Clean current Debian installer directory -->
+    <delete dir="${deb.tmp.dir}"/>
+    <mkdir dir="${deb.tmp.dir}"/>
+
+    <!-- This should exist but create to make sure -->
+    <mkdir dir="${osbuild.dir}/${gfxd.zip.prefix}distribution"/>
+
+    <!-- Workaround when build is on non-LDAP machine -->
+    <chmod dir="${deb.tmp.dir}" perm="ugo+rwx"/>
+
+    <!-- Copy EL6 RPM to Debian tmp directory to run alien -->
+    <copy todir="${deb.tmp.dir}">
+      <fileset dir="${osbuild.dir}/${gfxd.zip.prefix}distribution">
+        <include name="*.el6.*.rpm"/>
+      </fileset>
+    </copy>
+
+    <!-- Execute Alien on Ubuntu system -->
+    <!-- alien -generate -scripts pivotal-gemfirexd-1.0.1-2.el6.noarch.rpm -->
+    <exec executable="alien" dir="${deb.tmp.dir}">
+      <arg value="--generate"/>
+      <arg value="--scripts"/>
+      <arg value="pivotal-gemfirexd-${gemfirexd.version}-${build.number}.el6.noarch.rpm"/>
+    </exec>
+
+    <!-- Copy Debian packaging files -->
+    <copy overwrite="true" todir="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}/debian">
+      <fileset dir="release/installer/deb"/>
+    </copy>
+
+    <!-- Copy EULA from source location -->
+    <copy overwrite="true" file="${basedir}/release/installer/Pivotal_EULA.txt" tofile="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}/debian/copyright"/>
+
+    <replace dir="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}/debian" 
+             token="@INSTALL_DIR@"
+             value="${gfxd_install.dir.name}" 
+             summary="yes"/>
+    <replace dir="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}/debian" 
+             token="@VERSION@"
+             value="${gemfirexd.version}" 
+             summary="yes"/>
+    <replace dir="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}/debian" 
+             token="@BUILDNUMBER@"
+             value="${build.number}" 
+             summary="yes"/>
+
+    <!-- Execute Debian packaging build on Ubuntu system -->
+    <!-- dpkg-buildpackage -b -uc -us -->
+    <exec executable="dpkg-buildpackage" dir="${deb.tmp.dir}/pivotal-gemfirexd-${gemfirexd.version}">
+      <arg line="-b -uc -us"/>
+    </exec>
+
+    <!-- Copy Debian package to output -->
+    <copy todir="${osbuild.dir}/${gfxd.zip.prefix}distribution">
+      <fileset dir="${deb.tmp.dir}">
+        <include name="*.deb"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="gfxd-build-maven-dist" depends="-gfxd-props">
+    <mkdir dir="${gemfirexd.maven_dist.dir}"/>
+  
+    <fileset id="JavaDocJar.files" dir="${gemfirexd.docs.dir}/external/docs/japi"/>
+    <jar jarfile="${gemfirexd.maven_dist.dir}/gemfirexd-${gemfirexd.version}-javadoc.jar" compress="false">
+      <fileset refid="JavaDocJar.files"/>
+    </jar>
+
+    <copy file="${gemfirexd.jar}"
+          tofile="${gemfirexd.maven_dist.dir}/gemfirexd-${gemfirexd.version}.jar"/>
+    <copy file="${basedir}/release/installer/gemfirexd.pom"
+          tofile="${gemfirexd.maven_dist.dir}/gemfirexd-${gemfirexd.version}.pom"/>
+    <replace file="${gemfirexd.maven_dist.dir}/gemfirexd-${gemfirexd.version}.pom"
+             token="__MAVEN_GEMFIREXD_VERSION__"
+             value="${gemfirexd.version}" summary="yes"/>
+
+    <copy file="${gemfirexd.product.lib.dir}/gemfirexd-client.jar"
+          tofile="${gemfirexd.maven_dist.dir}/gemfirexd-client-${gemfirexd.version}.jar"/>
+    <copy file="${basedir}/release/installer/gemfirexdclient.pom"
+          tofile="${gemfirexd.maven_dist.dir}/gemfirexd-client-${gemfirexd.version}.pom"/>
+    <replace file="${gemfirexd.maven_dist.dir}/gemfirexd-client-${gemfirexd.version}.pom"
+             token="__MAVEN_GEMFIREXD_VERSION__"
+             value="${gemfirexd.version}" summary="yes"/>
+
+    <checksum fileext=".md5">
+      <fileset dir="${gemfirexd.maven_dist.dir}">
+        <include name="*.jar"/>
+        <include name="*.pom"/>
+      </fileset>
+    </checksum>
+
+    <checksum algorithm="sha1" fileext=".sha1">
+      <fileset dir="${gemfirexd.maven_dist.dir}">
+        <include name="*.jar"/>
+        <include name="*.pom"/>
+      </fileset>
+    </checksum>
+  </target>
+  
+  <target name="build-prts-dist" depends="-gfxd-props">
+
+    <property file="${build.dir}/build.number"/>
+    <!-- Set the version and build number of the PRTS Distribution for PHD -->
+    <property name="prts.version" value="${gemfirexd.version}-${build.number}"/>
+    <delete quiet="true" dir="${prts.dist.dir}"/>
+    <delete quiet="true" dir="${prts.dist.tmp.dir}"/>
+    
+    <mkdir dir="${prts.dist.tmp.dir}"/>
+    <mkdir dir="${prts.dist.tmp.dir}/tar"/>
+    <mkdir dir="${prts.dist.tmp.dir}/rpm"/>
+    <mkdir dir="${prts.dist.tmp.dir}/ambari"/>
+    <mkdir dir="${prts.dist.tmp.dir}/tar/PRTS-${prts.version}"/>
+    <mkdir dir="${prts.dist.tmp.dir}/rpm/PRTS-${prts.version}"/>
+    <mkdir dir="${prts.dist.tmp.dir}/ambari/PRTS-Ambari-${prts.version}"/>
+
+    <!-- We should do any an available file here and error if this doesn't exit --> 
+    <copy file="${osbuild.dir}/${gfxd.zip.prefix}distribution/${gemfirexd.product.formalname}_${gfxdversion}_b${build.number}_Linux.tar.gz"
+          todir="${prts.dist.tmp.dir}/tar/PRTS-${prts.version}"/>
+    
+    <copy file="${osbuild.dir}/${gfxd.zip.prefix}distribution/gfxd-${prts.version}.x86_64.rpm"
+          todir="${prts.dist.tmp.dir}/rpm/PRTS-${prts.version}"/>
+
+    <copy file="${osbuild.dir}/${gfxd.zip.prefix}distribution/gfxd-ambari-${prts.version}.x86_64.rpm"
+          todir="${prts.dist.tmp.dir}/ambari/PRTS-Ambari-${prts.version}"/>
+
+    <!-- Skip creating this as it's no longer needed
+    <tar destfile="${osbuild.dir}/${gfxd.zip.prefix}distribution/PRTS-${prts.version}-bin.tar.gz"
+         basedir="${prts.dist.tmp.dir}/tar/"
+         longfile="gnu"
+         compression="gzip"/> -->
+
+    <tar destfile="${osbuild.dir}/${gfxd.zip.prefix}distribution/PRTS-${prts.version}.tar.gz"
+         basedir="${prts.dist.tmp.dir}/rpm/"
+         longfile="gnu"
+         compression="gzip"/>
+
+    <delete file="${osbuild.dir}/${gfxd.zip.prefix}distribution/gfxd-${prts.version}.x86_64.rpm"/>
+
+    <!-- Execute createrepo command for Ambari -->
+    <exec dir="${prts.dist.tmp.dir}/ambari" executable="createrepo" failonerror="true">
+        <arg line="PRTS-Ambari-${prts.version}"/>
+    </exec>
+
+    <!-- Copy setup_repo.sh into Ambari dist -->
+    <copy file="release/installer/rpm/setup_repo.sh"
+          todir="${prts.dist.tmp.dir}/ambari/PRTS-Ambari-${prts.version}"/>
+
+    <chmod perm="a+x">
+      <fileset dir="${prts.dist.tmp.dir}/ambari/PRTS-Ambari-${prts.version}">
+        <include name="setup_repo.sh"/>
+      </fileset>
+    </chmod>
+  
+    <!-- Execute createrepo command for Ambari -->
+    <exec dir="${prts.dist.tmp.dir}/ambari" executable="tar" failonerror="true">
+        <arg line="czf ${osbuild.dir}/${gfxd.zip.prefix}distribution/PRTS-Ambari-${prts.version}.tar.gz PRTS-Ambari-${prts.version}"/>
+    </exec>
+
+    <delete file="${osbuild.dir}/${gfxd.zip.prefix}distribution/gfxd-ambari-${prts.version}.x86_64.rpm"/>
+  </target>
+  
+<!-- Compiles the GemFireXD example code -->
+<target depends="-gfxd-props" name="-gfxd-internal-compile-examples">
+  <description>Compiles the GemFireXD example  code and creates the examples
+      jar.  It does not build any GemFireXD product code.</description>
+  <mkdir dir="${gemfirexd.examples.classes.dir}"/>
+
+  <javac executable="${javac.primary}/bin/javac"
+         source="1.7"
+         fork="yes"
+         memoryMaximumSize="1024m"
+         debug="on"
+         deprecation="on"
+         destdir="${gemfirexd.tests.classes.dir}"
+         includeAntRuntime="true"
+         optimize="off"
+         srcdir="${gemfirexd.examples.src.dir}">
+    <include name="**/*.java"/>
+    <!-- Don't compile MR example, it is a maven project -->
+    <exclude name="mapreduce/**/*.java"/>
+    <classpath refid="gemfirexd.examples.compile.classpath"/>
+  </javac>
+  <copy todir="${gemfirexd.tests.classes.dir}/examples/jmxmonitor">
+     <fileset dir="${gemfirexd.examples.src.dir}/jmxmonitor">
+        <include name="jmx-monitor.xml"/>
+     </fileset>
+  </copy>
+
+</target>
+
+  <!-- Must run gfxd-build-product and gfxd-build-maven-dist before running this target -->
+  <target name="compile-mapreduce-example" depends="-gfxd-props">
+    <copy todir="${gemfirexd.product.dir}/examples/mapreduce/maven_dist">
+      <fileset dir="${osbuild.dir}/gemfirexd_maven_dist">
+        <include name="*.pom"/>
+      </fileset>
+    </copy>
+
+    <artifact:pom id="gemfirexd.pom" file="${gemfirexd.product.dir}/examples/mapreduce/maven_dist/gemfirexd-${gemfirexd.version}.pom" />
+
+    <artifact:install file="${osbuild.dir}/gemfirexd_maven_dist/gemfirexd-${gemfirexd.version}.jar">
+      <pom refid="gemfirexd.pom"/>
+    </artifact:install>
+
+    <artifact:mvn pom="${gemfirexd.product.dir}/examples/mapreduce/pom.xml" mavenHome="${gcm.dir}/where/maven/apache-maven-3.0.4" fork="true">
+      <arg value="clean"/>
+      <arg value="package"/>
+    </artifact:mvn>
+    
+    <delete dir="${gemfirexd.product.dir}/examples/mapreduce/target/surefire"/>
+  </target>
+
+<!-- Compiles the Hibernate Dialect Project -->
+<target depends="-gfxd-props" name="-hibernate-dialect-internal-compile">
+  <description>Compiles the Hibernate Dialect. It does not build any GemFireXD product code.</description>
+  <delete dir="${gemfirexd.hibernate.dialect.build.dir}" quiet="true"/>
+  <mkdir dir="${gemfirexd.hibernate.dialect.build.dir}"/>
+  <copy todir="${gemfirexd.hibernate.dialect.build.dir}">
+     <fileset dir="${gemfirexd.hibernate.dialect.src.dir}">
+        <include name="**/*.java"/>
+        <include name="**/README.txt"/>
+        <include name="**/bin"/>
+     </fileset>
+  </copy>
+  <mkdir dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin"/>
+  <javac executable="${javac.primary}/bin/javac"
+         source="1.7"
+         fork="yes"
+         memoryMaximumSize="1024m"
+         debug="on"
+         deprecation="on"
+         destdir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin"
+         includeAntRuntime="true"
+         optimize="off"
+         srcdir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/src">
+    <include name="**/*.java"/>
+    <classpath refid="gemfirexd.hibernate.compile.v3.classpath"/>
+  </javac>
+  <zip destfile="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin/gfxdBaseDialect.jar">
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin">
+      <include name="**/*.class"/>
+      <exclude name="**/*.jar"/>
+      <exclude name="**/*.zip"/>
+    </fileset>
+  </zip>
+  <mkdir dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV4/bin"/>
+  <javac executable="${javac.primary}/bin/javac"
+         source="1.7"
+         fork="yes"
+         memoryMaximumSize="1024m"
+         debug="on"
+         deprecation="on"
+         destdir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV4/bin"
+         includeAntRuntime="true"
+         optimize="off"
+         srcdir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV4/src">
+    <include name="**/*.java"/>
+    <classpath refid="gemfirexd.hibernate.compile.v4.classpath"/>
+  </javac>
+  <propertyfile file="${gemfirexd.hibernate.dialect.build.dir}/version.properties" comment="GemFireXD Dialect For Hibernate Version Information">
+          <entry key="Product-Name" value="GemFireXD Dialect For Hibernate"/>
+          <entry key="Product-Version" value="${gemfirexd.version}"/>
+          <entry key="GemFire-Version" value="${gemfire.version}"/>
+          <entry key="Build-Id" value="${build.number}"/>
+          <entry key="Build-Date" value="${build.time}"/>
+          <entry key="Build-Platform" value="${os.name} ${os.version} ${os.arch}"/>
+          <entry key="Build-Java-Version" value="${javac.primary.version}"/>
+          <entry key="Source-Date" value="${source.date}"/>
+          <entry key="Source-Revision" value="${source.revision}"/>
+          <entry key="Source-Repository" value="${source.branch}"/>
+  </propertyfile>
+
+  <zip destfile="${gemfirexd.hibernate.dialect.jar}">
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/src">
+      <include name="**/*.java"/>
+    </fileset>
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV3/bin">
+      <include name="**/*.class"/>
+    </fileset>
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV4/src">
+      <include name="**/*.java"/>
+    </fileset>
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/GemfirexdDialectForHibernateV4/bin">
+      <include name="**/*.class"/>
+    </fileset>
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}/Doc">
+      <include name="**/README.txt"/>
+    </fileset>
+    <fileset dir="${gemfirexd.hibernate.dialect.build.dir}">
+      <include name="version.properties"/>
+    </fileset>
+  </zip>
+</target>
+
+<target name="-gen-ant-properties" depends="-derby-prebuild">
+  <delete dir="${generated.ant.properties}" quiet="true"/>
+  <mkdir dir="${generated.ant.properties}"/>
+  <conditional unless="isMac">
+    <property name="j16lib" value="${javac.primary}/jre/lib"/>
+  </conditional>
+  <conditional if="isMac">
+    <property name="j16lib" value="${javac.primary}/../Classes"/>
+  </conditional>
+
+  <!-- Handle non apple JVM on Max OS X -->
+  <available file="${javac.primary}/jre/lib/rt.jar" property="rt.jar.exists"/>
+  <conditional if="rt.jar.exists">
+    <property name="java16compile.classpath"
+              value="${javac.primary}/jre/lib/rt.jar:${javac.primary}/jre/lib/jce.jar:${javac.primary}/jre/lib/jsse.jar:${findbugs-annotations.jar}"/>
+  </conditional>
+
+  <conditional if="isMac">
+    <property name="java16compile.classpath"
+              value="${javac.primary}/../Classes/classes.jar:${javac.primary}/../Classes/jce.jar:${javac.primary}/../Classes/jsse.jar:${findbugs-annotations.jar}"/>
+  </conditional>
+
+  <taskdef
+      name="setJdkProperties"
+      classname="org.apache.derbyPreBuild.PropertySetter"
+      classpath="${gemfirexd.out.dir}/classes"/>
+
+  <setJdkProperties/>
+
+  <propertyfile comment="Property file generated for derby build"
+    file="${generated.ant.properties}/ant.properties">
+    <entry key="jdk16" value="${javac.primary}"/>
+    <entry key="java16compile.classpath" value="${java16compile.classpath}:${product.lib.dir}/${slf4j-api.jar.name}:${product.lib.dir}/${gemfire.jar.name}:${jline.jar}:${jna.jar}:${commons-cli.jar}:${commons-io.jar}:${commons-dbcp.jar}:${thrift.jar}:${hadoop-common.jar}:${hadoop-mapreduce-client-core.jar}"/>
+    <entry key="javatools.dir" value="${derby.src}/tools/java"/>
+    <entry key="jline.path" value="${jline.jar}"/>
+    <entry key="jna.jar" value="${jna.jar}"/>
+    <entry key="javadoc.tool.jdk14" value="${java.home}/bin/javadoc"/>
+    <entry key="sane" value="${derby.sanity}"/>
+    <entry key="sanity" value="${derby.sanity}"/>
+    <entry key="gemfirexd.out.dir" value="${gemfirexd.out.dir}"/>
+    <entry key="logLevel" value="${logLevel}"/>
+    <entry key="jacoco-agent.config" value="${jacoco-agent.config}"/>
+    <entry key="codecoverage" value="${codecoverage}"/>
+  </propertyfile>
+</target>
+
+<target name="-derby-prebuild" depends="">
+  <mkdir dir="${gemfirexd.out.dir}/classes"/>
+  <derbyTargetNoAntProperties target="prebuild" antargs="-Dsane=${derby.sanity} -Dsanity=${derby.sanity}"/>
+</target>
+
+<!-- Compiling Derby junit and harness tests -->
+<target name="derby-testing" depends="-derby-testing" />
+<target name="-derby-testing" depends="-gfxd-props, props">
+  <description>
+    Compiles derby's harness tests.
+  </description>
+  <derbyTarget target="testing derbytestingjar"/>
+</target>
+<target name="-derby-testing-only" depends="-gfxd-props, props">
+  <description>
+    Compiles derby's harness tests excluding demo (toursdb).
+  </description>
+  <derbyTarget target="testing-only derbytestingjar"/>
+</target>
+
+<!-- JUnit Tests -->
+
+<target name="-derby-set-timestamp">
+  <tstamp prefix="derby.junit">
+    <format property="standardtime" pattern="yyyy-MM-dd hh:mm aa zzz"/>
+  </tstamp>
+  <property name="derby.junit.timestamp" value="${derby.junit.DSTAMP}_${derby.junit.TSTAMP}"/>
+</target>
+
+<target name="-derby-junit-all" depends="-gfxd-props, -keep-going, -derby-set-timestamp">
+ <conditional unless="gfxd.junit.testcase">
+  <delete dir="${tests.results.dir}/derby-junit-tests"/>
+  <mkdir dir="${tests.results.dir}/derby-junit-tests"/>
+  <create-gemfire-properties
+    dir="${tests.results.dir}/derby-junit-tests" logLevel="config"/>
+   <derbyTarget target="junit-all"
+                antargs="-Dderby.junit.outdir=${tests.results.dir}/derby-junit-tests/xml-reports"/>
+ </conditional>
+</target>
+
+<!-- ToDo: how to switch to run with 64 JVM? -->
+<target name="-derby-junit-all64" depends="-gfxd-props, -keep-going, -derby-set-timestamp">
+ <conditional unless="gfxd.junit.testcase">
+  <delete dir="${tests.results64.dir}/derby-junit-tests"/>
+  <mkdir dir="${tests.results64.dir}/derby-junit-tests"/>
+  <create-gemfire-properties
+    dir="${tests.results64.dir}/derby-junit-tests" logLevel="config"/>
+   <derbyTarget target="junit-all"
+                antargs="-Dderby.junit.outdir=${tests.results64.dir}/derby-junit-tests/xml-reports"/>
+ </conditional>
+</target>
+
+<target name="-derby-qa-run-all" depends="-gfxd-props, -keep-going, -derby-set-timestamp" >
+  <conditional unless="gfxd.junit.testcase">
+   <mkdir dir="${tests.results.dir}/derby-junit_${derby.junit.timestamp}"/>
+   <create-gemfire-properties
+     dir="${tests.results.dir}/derby-junit_${derby.junit.timestamp}"/>
+   <derbyTarget target="junit-qa-all"
+                 antargs="-Dderby.junit.outdir=${tests.results.dir}/derby-junit_${derby.junit.timestamp}"/>
+  </conditional>
+
+</target>
+
+<!-- runs qa reporting on a pre-existing test result directory.  -->
+<target name="-derby-qa-report-all" depends="-gfxd-props, -keep-going">
+  <fail unless="derby.junit.timestamp" />
+  <derbyTarget target="junit-qa-report"
+               antargs="-Dderby.junit.outdir=${tests.results.dir}/derby-junit_${derby.junit.timestamp}"/>
+</target>
+
+<!-- runs the qa junit tests, and runs the qa reporter -->
+<target name="-derby-qa-run-report-all" depends="-derby-qa-run-all,-derby-qa-report-all"/>
+
+<target name="-fail-if-file-isnot-empty" depends="props">
+  <property name="derby.xml.reports.file" value="${derby.xml.reports.dir}/derby-harness-tests.xml"/>
+  <!-- create an empty file and compare against it. -->
+  <property name="empty.file" value="${osbuild.dir}/emptyFile"/>
+  <touch file="${empty.file}"/>
+  <condition property="files.match">
+    <filesmatch file1="${empty.file}" file2="${result.file}"/>
+  </condition>
+  <echo level="info" message="Info: all derby-harness-tests tests ran successfully."/>
+  <conditional if="files.match">
+    <concat append="no" destfile="${derby.xml.reports.file}">
+<![CDATA[<testsuite errors="0" failures="0" name="derby-harness-tests" tests="1">
+  <testcase classname="derby-harness-tests" name="derby-harness-tests"/>
+</testsuite>]]>
+    </concat>
+  </conditional>
+  <conditional unless="files.match">
+  <loadfile srcfile="${derby.test.results.dir}/derbylang_fail.txt" property="output">
+    <filterchain>
+      <filterreader classname="org.apache.tools.ant.filters.TailFilter">
+        <param name="lines" value="15"/>
+      </filterreader>
+    </filterchain>
+  </loadfile>
+  <concat append="no" destfile="${derby.xml.reports.file}">
+<![CDATA[<testsuite errors="0" failures="1" name="Failures from derbylang_fail.txt" tests="1">
+  <testcase classname="classname-derby-harness-tests" name="derby-harness-tests">
+    <failure message="Found Derby harness test failures!">]]>
+<![CDATA[<![CDATA[
+${output}
+]]>]]&gt;
+<![CDATA[      </failure>
+  </testcase>
+</testsuite>]]>
+        </concat>
+    <fail message="Derby harness test failures!"/>
+  </conditional>
+</target>
+
+<!-- Derby's old test harness -->
+<!-- Running Derby Functional Tests -->
+<!-- All tests -->
+<target name="-derby-run-harness-tests" depends="-gfxd-props, -keep-going">
+  <description>
+    Runs the derby "derbylang" testsuite.
+    Basic functionality of language implementation in derby.
+  </description>
+  <delete dir="${derby.test.results.dir}"/>
+  <mkdir dir="${derby.test.results.dir}"/>
+  <create-gemfire-properties dir="${derby.test.results.dir}"/>
+  <java classname="org.apache.derbyTesting.functionTests.harness.RunSuite" dir="${derby.test.results.dir}" failonError="true" fork="true" classpath="${derby.test.classpath}">
+    <assertions>
+      <enable/>
+    </assertions>
+    <env key="CLASSPATH" value="${derby.test.classpath}"/>
+    <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+    <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+    <sysproperty key="javaCmd" value="${testJVM}"/>
+    <sysproperty key="topsuitedir" value="${derby.test.results.dir}"/>
+    <sysproperty key="outputdir" value="${derby.test.results.dir}"/>
+    <sysproperty key="derbyTesting.replacePolicyFile" value="true"/>
+    <sysproperty key="noSecurityManager" value="true"/>
+    <sysproperty key="testSpecialProps" value="noSecurityManager=true^derbyTesting.replacePolicyFile=true"/>
+    <sysproperty key="test.use-odbc-bridge" value="${gemfirexd.odbc.testrun}"/>
+    <sysproperty key="http.proxyHost" value="${http.proxyHost}"/>
+    <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+    <!-- allow running in background that gets stuck due to jline usage of ij -->
+    <sysproperty key="jline.terminal" value="scala.tools.jline.UnsupportedTerminal"/>
+    <sysproperty key="java.awt.headless" value="true"/>
+    <arg line="derbylang"/>
+  </java>
+
+  <antcall target="-fail-if-file-isnot-empty">
+    <param name="result.file" value="${derby.test.results.dir}/derbylang_fail.txt"/>
+    <param name="derby.xml.reports.file" value="${derby.xml.reports.dir}/derby-harness-tests.xml"/>
+  </antcall>
+</target>
+
+<!-- allow running in background that gets stuck due to jline usage of ij -->
+<!-- ToDo: need to switch to run with 64 JVM -->
+<target name="-derby-run-harness-tests64" depends="-gfxd-props, -keep-going">
+  <description>
+    Runs the derby "derbylang" testsuite.
+    Basic functionality of language implementation in derby.
+  </description>
+  <delete dir="${derby.test.results64.dir}"/>
+  <mkdir dir="${derby.test.results64.dir}"/>
+  <create-gemfire-properties dir="${derby.test.results64.dir}"/>
+  <java classname="org.apache.derbyTesting.functionTests.harness.RunSuite" dir="${derby.test.results64.dir}" failonError="true" fork="true" classpath="${derby.test.classpath}">
+    <assertions>
+      <enable/>
+    </assertions>
+    <env key="CLASSPATH" value="${derby.test.classpath}"/>
+    <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+    <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+    <!-- ToDo: How do we force 64bit JVM here -->
+    <sysproperty key="javaCmd" value="${unittest.java64}"/>
+    <sysproperty key="topsuitedir" value="${derby.test.results64.dir}"/>
+    <sysproperty key="outputdir" value="${derby.test.results64.dir}"/>
+    <sysproperty key="derbyTesting.replacePolicyFile" value="true"/>
+    <sysproperty key="noSecurityManager" value="true"/>
+    <sysproperty key="testSpecialProps" value="noSecurityManager=true^derbyTesting.replacePolicyFile=true"/>
+    <sysproperty key="test.use-odbc-bridge" value="${gemfirexd.odbc.testrun}"/>
+    <sysproperty key="http.proxyHost" value="${http.proxyHost}"/>
+    <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+    <!-- allow running in background that gets stuck due to jline usage of ij -->
+    <sysproperty key="jline.terminal" value="scala.tools.jline.UnsupportedTerminal"/>
+    <sysproperty key="java.awt.headless" value="true"/>
+    <arg line="derbylang"/>
+  </java>
+
+  <antcall target="-fail-if-file-isnot-empty">
+    <param name="result.file" value="${derby.test.results64.dir}/derbylang_fail.txt"/>
+    <param name="derby.xml.reports.file" value="${derby.xml.reports64.dir}/derby-harness-tests.xml"/>
+  </antcall>
+</target>
+
+<!-- Single tests -->
+<target name="-derby-run-harness-test" depends="-gfxd-props">
+  <description>
+    Runs the given derby harness tests.
+    Use "-Dderby.testcase=derby test name" to run a single test.
+    E.g.: sh build.sh gfxd-run-one-harness-test -Dderby.testcase=jdbcapi/metadataMultiConn.java
+    Available tests:
+        jdbcapi/metadataMultiConn.java
+        lang/DB2IsolationLevels.sql
+        lang/LOBDB2compatibility.sql
+        lang/aggregateOptimization.sql
+        lang/altertable.sql
+        lang/autoincrement.sql
+        lang/checkConstraint.sql
+        lang/closed.java
+        lang/columnDefaults.sql
+        lang/compressTable.sql
+        lang/connect.sql
+        lang/consistencyChecker.sql
+        lang/currentSchema.sql
+        lang/cursorerrors.sql
+        lang/datetime.sql
+        lang/db2Compatibility.sql
+        lang/ddlTableLockMode.sql
+        lang/declareGlobalTempTableJavaJDBC30.java
+        lang/desc_index.sql
+        lang/dropTable.sql
+        lang/emptyStatistics.sql
+        lang/fk_nonSPS.sql
+        lang/holdCursorIJ.sql
+        lang/inbetween.sql
+        lang/infostreams.sql
+        lang/isolationLevels.sql
+        lang/joinDeadlock.sql
+        lang/langUnitTests.sql
+        lang/lockTable.sql
+        lang/lojreorder.sql
+        lang/maxMemPerTab.java
+        lang/nestedCommit.sql
+        lang/openScans.sql
+        lang/optimizerOverrides.sql
+        lang/orderbyElimination.sql
+        lang/outerjoin.sql
+        lang/outparams.java
+        lang/paramij.sql
+        lang/partdml.sql
+        lang/predicatePushdown.sql
+        lang/predicatesIntoViews.sql
+        lang/refActions.sql
+        lang/refActions2.sql
+        lang/refActions3.sql
+        lang/reopenScan.sql
+        lang/setOpPlan.sql
+        lang/specjPlans.sql
+        lang/subquery.sql
+        lang/subquery2.sql
+        lang/subqueryFlattening.sql
+        lang/triggerBeforeTrig.sql
+        lang/triggerGeneral.sql
+        lang/triggerRecursion.sql
+        lang/triggerRefClause.sql
+        lang/ungroupedAggregatesNegative.sql
+        lang/wisconsin.java
+  </description>
+  <delete dir="${derby.test.results.dir}"/>
+  <mkdir dir="${derby.test.results.dir}"/>
+  <create-gemfire-properties dir="${derby.test.results.dir}"/>
+  <java classname="org.apache.derbyTesting.functionTests.harness.RunTest" dir="${derby.test.results.dir}" failonError="true" fork="true" classpath="${derby.test.classpath}">
+    <env key="CLASSPATH" value="${derby.test.classpath}"/>
+    <env key="ODBCSYSINI" value="${gemfirexd.odbc.testdir}"/>
+    <env key="ODBCINI" value="${gemfirexd.odbc.testdir}"/>
+
+    <sysproperty key="javaCmd" value="${testJVM}"/>
+    <sysproperty key="topsuitedir" value="${derby.test.results.dir}"/>
+    <sysproperty key="outputdir" value="${derby.test.results.dir}"/>
+    <sysproperty key="topsuitename" value="derbylang"/>
+    <sysproperty key="derbyTesting.replacePolicyFile" value="true"/>
+    <sysproperty key="noSecurityManager" value="true"/>
+    <sysproperty key="test.use-odbc-bridge" value="${gemfirexd.odbc.testrun}"/>
+    <sysproperty key="http.proxyHost" value="${http.proxyHost}"/>
+    <sysproperty key="http.proxyPort" value="${http.proxyPort}"/>
+    <!-- allow running in background that gets stuck due to jline usage of ij -->
+    <sysproperty key="jline.terminal" value="scala.tools.jline.UnsupportedTerminal"/>
+    <sysproperty key="java.awt.headless" value="true"/>
+    <arg line="${derby.testcase}"/>
+  </java>
+
+  <!-- Tests always claim to pass because no derbylang_fail.txt is created
+       when a single test is run so no reason to do error checking below -->
+  <!-- <antcall target="-fail-if-file-isnot-empty">
+    <param name="result.file" value="${derby.test.results.dir}/derbylang_fail.txt"/>
+  </antcall> -->
+</target>
+
+<!-- End Derby Functional tests -->
+
+  <target name="gfxd-external-javadocs" depends="-gfxd-props">
+    <antcall target="-gfxd-external-javadocs"/>
+  </target>
+
+<target depends="-gfxd-props" name="gfxd-pack-RNotes">
+  <delete file="${gemfirexd.product.dir}/ReleaseNotes.txt" quiet="true"/>
+  <property file="${build.dir}/build.number"/>
+  <property file="${build.dir}/lastUpdate.txt"/>
+  <copy file="${basedir}/release/docfiles/gfxd-ReleaseNotes.txt"
+    tofile="${gemfirexd.product.dir}/ReleaseNotes.txt"/>
+
+  <concat append="true" fixlastline="true" destfile="${gemfirexd.product.dir}/ReleaseNotes.txt" >
+--------------------------------
+ Changes in ${gemfirexd.version}
+ Source-Revision=${source.revision}
+ Build-Date=${build.time}
+--------------------------------
+  </concat>
+
+  <concat append="true" fixlastline="true" destfile="${gemfirexd.product.dir}/ReleaseNotes.txt">
+    <filelist dir="${basedir}" files="RNDeltaChanges.txt"/>
+  </concat>
+
+  <!-- Place updates of files with intention they can be checked in -->
+  <replace file="${gemfirexd.product.dir}/ReleaseNotes.txt">
+    <replacetoken><![CDATA[#]]></replacetoken>
+    <replacevalue><![CDATA[]]></replacevalue>
+  </replace>
+
+  <replace file="${gemfirexd.product.dir}/ReleaseNotes.txt">
+    <replacetoken><![CDATA[
+Please keep text to 78 char width - no wider than this 
+]]></replacetoken>
+    <replacevalue><![CDATA[]]></replacevalue>
+  </replace>
+
+  <replace file="${gemfirexd.product.dir}/ReleaseNotes.txt">
+    <replacetoken><![CDATA[
+Use format Fixed Ticket 12345: description of changes 
+]]></replacetoken>
+    <replacevalue><![CDATA[]]></replacevalue>
+  </replace>
+
+  <copy file="${gemfirexd.product.dir}/ReleaseNotes.txt"
+     tofile="${basedir}/release/docfiles/gfxd-ReleaseNotes.txt.UPDATE"/>
+
+  <copy file="${basedir}/RNDeltaChanges.txt"
+     tofile="${basedir}/RNDeltaChanges.txt.UPDATE"/>
+</target>
+
+  <target name="-gfxd-versioned-props" depends="props">
+    <property name="gemfirexd.versioned.root" value="${gcm.dir}/where/gemfireXD/releases"/>
+    <!-- define default osbuild.dirs for all the test versions
+         property names must follow the convention osbuild.dir.<directory name>
+      -->
+    <property name="osbuild.dir.tests100"
+              value="${gemfirexd.versioned.root}/GemFireXD1.0.0-all"/>
+    <property name="osbuild.dir.tests130"
+              value="${gemfirexd.versioned.root}/GemFireXD1.3.0-all"/>
+    <property name="osbuild.dir.tests131"
+              value="${gemfirexd.versioned.root}/GemFireXD1.3.1-all"/>
+  </target>
+
+  <target depends="-gfxd-versioned-props" name="-gfxd-compile-versioned-tests">
+    <subant genericantfile="${basedir}/buildfiles/gfxdVersionedTests.xml"
+            inheritall="true"
+            failonerror="true">
+      <dirset dir="." includes="tests*" excludes="tests"/>
+    </subant>
+  </target>
+
+  <target name="gfxd-clean-versioned-tests" depends="props">
+    <subant genericantfile="${basedir}/buildfiles/gfxdVersionedTests.xml"
+            inheritall="true"
+            failonerror="true"
+            target="-gfxd-clean-tests">
+      <dirset dir="." includes="tests*" excludes="tests"/>
+    </subant>
+  </target>
+
+  <target name="-gfxd-findbugs" depends="-gfxd-props">
+    <property name="findbugs.sourcePath" value="${src.dir},${derby.src}"/>
+    <property name="findbugs.class" value="${gemfirexd.jar}"/>
+    
+    <if>
+      <not>
+        <available file="${gemfirexd.jar}"/>
+      </not>
+      <then>
+        <echo level="info" message="Unable to locate ${gemfirexd.jar}, will compile first before scanning..."/>
+        <antcall target="-gfxd-internal-build-product"/>
+      </then>
+    </if>
+    <antcall target="findbugs" inheritAll="true"/>
+  </target>
+
+  <target name="-gfxd-shared-library-make" depends="props">
+
+    <property file="${build.dir}/build.number"/>
+
+    <!-- gnumake to create shared library -->
+    <exec dir="${derby.src}/java/engine/com/pivotal/gemfirexd/internal/engine" executable="${ant.make}" failonerror="true">
+      <arg value="${makeTarget}"/>
+      <env key="OSNAME" value="${os.name}"/>
+      <env key="GFLIB_MODEL" value="${cPointerModel}"/>
+      <env key="GEMFIRE_VERSION" value="${gemfirexd.native.version}"/>
+      <env key="GEMFIRE_BUILDID" value="${user.name} ${build.number}"/>
+      <env key="GEMFIRE_BUILDDATE" value="${build.time}"/>
+      <env key="GEMFIRE_BUILDOS" value="${os.arch} ${os.name} ${os.version}"/>
+      <env key="base" value="${basedir}"/>
+      <env key="OSBUILDDIR" value="${osbuild.dir}"/>
+      <env key="GFXDBUILDDIR" value="${gemfirexd.out.dir}"/>
+    </exec>
+  </target>
+
+  <patternset id="gfxd.lib.files">
+     <include name="gemfirexd.dll"/>
+     <include name="gemfirexd64.dll"/>
+     <include name="libgemfirexd.so"/>
+     <include name="libgemfirexd64.so"/>
+     <include name="libgemfirexd_sol.so"/>
+     <include name="libgemfirexd_sol64.so"/>
+  </patternset>
+
+  <patternset id="gfxd.lib.debug.files">
+     <include name="libgemfirexd*_g.so"/>
+     <include name="gemfirexd*d.dll"/>
+  </patternset>
+
+  <target name="-gfxd-rebuild-shared-library" depends="gfxd-props, gfxd-clean-native-library">
+    <condition property="ant.make" value="${basedir}/bin/vcvars.bat">
+      <os family="windows"/>
+    </condition>
+
+    <if>
+      <or>
+        <equals arg1="${do32bit}" arg2="true" casesensitive="false"/>
+        <equals arg1="${do32bit}" arg2="1"/>
+      </or>
+      <then>
+        <var name="cPointerModel" value="32bit"/>
+        <echo message="PointerModel = 32bit" level="info"/>
+      </then>
+      <elseif>
+        <or>
+          <equals arg1="${do64bit}" arg2="true" casesensitive="false"/>
+          <equals arg1="${do64bit}" arg2="1"/>
+        </or>
+        <then>
+          <var name="cPointerModel" value="64bit"/>
+          <echo message="PointerModel = 64bit" level="info"/>
+        </then>
+      </elseif>
+      <else>
+        <fail message="do32bit or do64bit must be set by now"/>
+      </else>
+    </if>
+
+    <antcall target="-gfxd-shared-library-make">
+      <param name="makeTarget" value="${sharedLibraryTargets}"/>
+      <param name="cPointerModel" value="${cPointerModel}"/>
+    </antcall>
+
+    <copy preservelastmodified="true" overwrite="true" todir="${derby.src}/lib">
+      <fileset dir="${hiddenlib.dir}">
+        <patternset refid="gfxd.lib.files"/>
+        <patternset refid="gfxd.lib.debug.files"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <macrodef name="copySharedLib">
+    <attribute name="todir"/>
+    <sequential>
+      <copy preservelastmodified="true" overwrite="true" todir="@{todir}">
+        <fileset dir="${derby.src}/lib">
+          <patternset refid="gfxd.lib.files"/>
+        </fileset>
+      </copy>
+      <chmod perm="a+x">
+        <fileset dir="@{todir}" includes="*.dll,*.so*"/>
+      </chmod>
+    </sequential>
+  </macrodef>
+
+  <target name="gfxd-pack-shared-library" depends="gfxd-props">
+     <copySharedLib todir="${gemfirexd.product.lib.dir}"/>
+  </target>
+
+  <target name="gfxd-clean-native-library" depends="gfxd-props">
+    <conditional if="do32bit">
+      <delete dir="${src.out.dir}/objects"/>
+      <delete dir="${src.out.dir}/objects_g"/>
+    </conditional>
+    <conditional if="do64bit">
+      <delete dir="${src.out.dir}/objects64"/>
+      <delete dir="${src.out.dir}/objects64_g"/>
+    </conditional>
+  </target>
+
+<!-- Target to run odbc testharness -->
+ 
+ <target name="gfxd-run-odbc-test-fwk"
+         depends="gfxd-run-odbc-test-fwk32, gfxd-run-odbc-test-fwk64"
+         if="gfxd.build.odbc"
+         description="Runs test harness for ODBC driver using persistent framework" />
+ <target name="gfxd-run-odbc-test-fwk-only"
+    depends="gfxd-run-odbc-test-fwk32-only, gfxd-run-odbc-test-fwk64-only"
+    if="gfxd.build.odbc"
+    description="Runs test harness for ODBC driver using persistent framework" />
+
+ <target name="gfxd-run-odbc-test-fwk32"
+         depends="-gfxd-props, gfxd-build-odbc32-install"
+         if="gfxd.build.odbc"
+         description="Runs the 32 bit test harness for ODBC driver">
+
+   <antcall target="-gfxd-run-odbc-test-fwk-impl">
+     <param name="testresults.dir" value="${gemfirexd.odbc.fwkresults.dir}/32"/>
+    <param name="testframework.dir" value="${gemfirexd.odbc.fwk.dir}/32"/>
+    <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/32"/>
+    <param name="is64bit.val" value="0"/>
+   </antcall>
+ </target>
+
+ <target name="gfxd-run-odbc-test-fwk32-only" depends="-gfxd-props">
+   <antcall target="-gfxd-run-odbc-test-fwk-impl">
+     <param name="testresults.dir" value="${gemfirexd.odbc.fwkresults.dir}/32"/>
+     <param name="testframework.dir" value="${gemfirexd.odbc.fwk.dir}/32"/>
+     <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/32"/>
+     <param name="is64bit.val" value="0"/>
+   </antcall>
+ </target>
+ <target name="gfxd-run-odbc-test-fwk64-only" depends="-gfxd-props">
+   <antcall target="-gfxd-run-odbc-test-fwk-impl">
+     <param name="testresults.dir" value="${gemfirexd.odbc.fwkresults.dir}/64"/>
+     <param name="testframework.dir" value="${gemfirexd.odbc.fwk.dir}/64"/>
+     <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/64"/>
+     <param name="is64bit.val" value="1"/>
+   </antcall>
+ </target>
+
+ <target name="gfxd-run-odbc-test-fwk64"
+         depends="-gfxd-props, gfxd-build-odbc64-install"
+         if="gfxd.build.odbc"
+         description="Runs the 64 bit test harness for ODBC driver">
+
+     <antcall target="-gfxd-run-odbc-test-fwk-impl">
+       <param name="testresults.dir" value="${gemfirexd.odbc.fwkresults.dir}/64"/>
+       <param name="testframework.dir" value="${gemfirexd.odbc.fwk.dir}/64"/>
+       <param name="odbclib.dir" value="${gemfirexd.odbc.out.dir}/64"/>
+       <param name="is64bit.val" value="1"/>
+     </antcall>
+ </target>
+ <target depends="props" name="-gfxd-run-odbc-test-fwk-impl" description="Runs odbc test harness">
+   <echo message="Running odbc test harness..." level="info"/>
+   <delete dir="${testresults.dir}" quiet="true"/>
+   <mkdir dir="${testresults.dir}"/>
+   <copy preservelastmodified="true" todir="${testresults.dir}">
+    <fileset dir="${gemfirexd.odbc.tests.src.dir}/unit/">
+      <include name="**/*.java" />
+      <include name="Manifest.imf" />
+    </fileset>
+   </copy>
+   <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="1024m" debug="on" deprecation="off" destdir="${testresults.dir}" includeAntRuntime="true" nowarn="off" optimize="off" encoding="UTF-8">
+     <src path="${gemfirexd.odbc.tests.src.dir}/unit" />
+     <classpath>
+        <pathelement location="${gemfirexd.unsealed.jar}"/>
+     </classpath>
+   </javac>
+   <jar destfile="${testresults.dir}/TestProcedures.jar" basedir="${testresults.dir}"/>
+   <conditional if="isWindows">
+    <copy file="${basedir}/gemfirexd/GemFireXDTests/odbc/framework/fwk.bat" tofile="${testresults.dir}/fwk.bat"/>
+     <copy file="${basedir}/gemfirexd/GemFireXDTests/odbc/framework/testodbc.sql" tofile="${testresults.dir}/testodbc.sql"/>
+     <exec dir="${testresults.dir}"
+            executable="cmd"
+            failonerror="true">
+      <env key="TESTRESULTDIR" value="${testresults.dir}"/>
+      <env key="TESTFRAMEWORKDIR" value="${testframework.dir}"/>
+      <env key="ODBCLIBDIR" value="${odbclib.dir}"/>
+      <env key="GEMFIREXDPRODUCTDIR" value="${gemfirexd.product.dir}"/>
+      <env key="IS64BIT" value="${is64bit.val}"/>
+      <env key="GCMDIR" value="${gcm.dir}"/>
+      <env key="BASEDIR" value="${basedir}"/>
+      <env key="ITERATION" value="${gfxd.odbcfwktest.iteration}"/>
+          <arg value="/c"/>
+          <arg path="${testresults.dir}/fwk.bat"/>
+       </exec>
+    </conditional>
+    <conditional unless="isWindows">
+      <copy file="${basedir}/gemfirexd/GemFireXDTests/odbc/framework/fwk.sh" tofile="${testresults.dir}/fwk.sh"/>
+      <copy file="${basedir}/gemfirexd/GemFireXDTests/odbc/framework/testodbc.sql" tofile="${testresults.dir}/testodbc.sql"/>
+      <chmod file="${testresults.dir}/fwk.sh" perm="a+x"/>
+      <exec dir="${testresults.dir}"
+         executable="bash"
+         failonerror="true">
+      <env key="TESTRESULTDIR" value="${testresults.dir}"/>
+      <env key="TESTFRAMEWORKDIR" value="${testframework.dir}"/>
+      <env key="ODBCLIBDIR" value="${odbclib.dir}"/>
+      <env key="GEMFIREXDPRODUCTDIR" value="${gemfirexd.product.dir}"/>
+      <env key="IS64BIT" value="${is64bit.val}"/>
+      <env key="GCMDIR" value="${gcm.dir}"/>
+      <env key="GFOS" value="${gf.os}"/>
+      <env key="ITERATION" value="${gfxd.odbcfwktest.iteration}"/>
+      <env key="ISPROGRESS" value="${gfxd.odbc.progresstest}"/>
+      <arg value="-c"/>
+         <arg path="${testresults.dir}/fwk.sh"/>
+      </exec>
+    </conditional>
+ </target>
+ 
+</project>

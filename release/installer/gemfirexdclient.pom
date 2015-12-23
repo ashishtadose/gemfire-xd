@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.pivotal.gemfirexd</groupId>
+  <artifactId>gemfirexd-client</artifactId>
+  <name>GemFire XD Client</name>
+  <version>__MAVEN_GEMFIREXD_VERSION__</version>
+  <description>GemFire XD JDBC Driver</description>
+  <url>http://www.pivotal.io/products/pivotal-gemfire</url>
+
+  <issueManagement>
+    <system>Pivotal Support Services</system>
+    <url>http://pivotal.io/support</url>
+  </issueManagement>
+
+  <organization>
+    <name>Pivotal Software, Inc.</name>
+    <url>http://www.pivotal.io/</url>
+  </organization>
+
+</project>

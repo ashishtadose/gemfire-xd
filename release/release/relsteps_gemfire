@@ -1,0 +1,192 @@
+Product Release Procedure for GemFire Products
+
+ 1. QA    Declare that a sanctioned build of product will soon be
+            ready for release.  This can be email or verbal and
+            may be as early as a few weeks before the scheduled
+            release date but no later than 3 days before release.
+
+need to cover steps for updating the docs
+need to cover steps for providing new product sizes for docs before 
+they're done.
+
+ 2. Manu  Create product part numbers and sign-off sheets.  Send the 
+          sign-off sheets to QA and send the part numbers to the 
+          "releases" email list. Manufacturing keeps the labels and 
+          sets aside blank media for masters.
+
+ 3. QA    Review the bug list for bugnote candidates.
+
+ 4. QA    Release notes 
+          Work with Docs to adjust bugnotes that live inside the
+            product if needed.  Requires recalc of product checksums
+            on unix and rebuilding the installer on NT.  It would be
+            VERY GOOD to have a script that would verify the checksums,
+            put in a new bugnotes file, and then recalc the checksum.
+
+ 5. Docs  Work with QA to change and review paper bugnotes, release notes,
+              and install guides.
+
+ 6. QA    Make engineering archive in a location accessable from /gcm/where/...
+            then make the engineering archive CDRs kept by Manufacturing.
+
+          Example: 
+          $ cd /gcm/where/gemfire/400/i86.Linux
+          $ ./makeRLSsnap_unix > makeRLSsnap.log 2>&1
+
+ 7. QA    Declare product is now ready for release.
+            ***** This needs to be two days or more before prodrev to  *****
+            ***** allow time for QA to verify results of next 2 steps. *****
+
+ 8. Manu  Use release.pl to put product and source code to ship's inventory.
+            The source of the release is the Engineering online archive.
+            Requires ship password.  See Appendix A for detailed notes
+            on using release.pl.
+
+ 9. Manu  Make product and source code master media.  This may be
+            tape, CDRom, and/or floppies depending on the product.
+            CDRom will be the prefered media.  Product and source
+            go on separate media to limit the losses in the event of
+            catastrophic media failure.  Requires ship password.
+            See Appendix B for notes on making masters.
+
+10. QA    Verify master media of product and source code.
+
+             unzip -t on all .zip files
+
+11. QA    Test installer and all installation docs from master media.
+
+             Run installer off CD. Run the whole way through the install
+             and then start the console and start and stop a system. 
+             Once the system is stopped exit the console and run the 
+             uninstaller. Once the uninstall is completed check to see 
+             that there are leftover files/directories in the install
+             location.
+
+12. QA    Call prodrev meeting and hand master CDRoms, paper docs (bugnotes, 
+          release notes, install guides), and completed sign-off sheets to 
+          Manufacturing.
+
+13. QA    Tag svn repository tree with release version.
+
+          As user build cd to $gf40 and find out the svn revision the 
+          sources are at: 
+
+          svn info will provide the revision the sources are at. Use that in
+          the <rev> below.  
+
+          svn copy -r <rev> https://hera.gemstone.com/svn/gemfire/trunk \
+            https://hera.gemstone.com/svn/gemfire/tags/gemfire400_release
+
+14. Manu  Replace the old version of installers on the ftp_distribution/gemfire
+          ftp site with the release installers from the Engineering Archive.
+          Send the new download instructions to Stevens. 
+
+14. Manu  Work with Docs and Tech Support to put items on the web (previously
+            selected bugnotes, install guides, and possibly the product).
+
+15. Manu  Archive sign-off sheets.
+
+18. Manu  Send master media off-site.
+Appendix A    Release.pl for GS products
+
+Here is a primer on using the release.pl script for GemFire and related 
+products.  Generally manufacturing will use this script but it will be 
+documented here for future reference by any who may find a need to run 
+the script.
+
+THE RELEASE SCRIPT MUST BE RUN WHILE LOGGED IN AS USER "ship"!!!!!
+
+For GemStone/S products the release script needs to be run from a machine 
+with the same archtecture as the product being released except for PC 
+products.  So, if you are releasing an HP product make sure you are logged 
+on to an HP machine.  For PC prducts any machine will do but a Solaris 
+machine will be the easiest to find.
+
+For products that don't use the antiquted checksum process which include
+GemStone/J, Facets and GemFire you can run the release for all the platforms
+from a Solaris box.  
+
+For releasing GemFire:
+  /gcm/where/gemfire/40/sparc.Solaris/release/release.pl <prodNo> <rootDir>
+
+   o   prodNo is the product number issued by Manufacturing
+   o   rootDir is the directory path of the top level of a
+       product's engineering archive.  It has directories
+       "product", "hidden", "sources", and for PCs "installer"
+
+/gcm/where/gemfire/40/sparc.Solaris/release/release/release.pl 13-50-4.0-0-0-0 /export/gemfire_archive/users/releases/GemFire4.0-i686.Linux
+
+/gcm/where/gemfire/40/sparc.Solaris/release/release/release.pl 13-10-4.0-0-0-0 /export/gemfire_archive/users/releases/GemFire4.0-sparc.Solaris
+
+/gcm/where/gemfire/40/sparc.Solaris/release/release/release.pl 13-11-4.0-0-0-0 /export/gemfire_archive/users/releases/GemFire4.0-x86.Windows_NT
+
+The release.pl  automatically creates an additional product called the "source 
+product" with 100 added to the first number of the given "prodNo".
+
+Appendix B    Making master CDRoms for GemStone  products
+
+Generally manufacturing will be the folks to use these scripts but it will 
+be documented here for future reference by any who may find a need to run 
+the scripts.  Distribution also has intructions on how to make product 
+tapes and CDs.
+
+Making master CDRoms:
+---------------------
+We put the shippable product on one CD and the sources product on another CD
+(these can be combined if they fit).  It is intended that Product and source 
+go on separate media to limit the losses in the event of catastrophic media 
+failure but redundant backup of this data makes this unneccessary.
+
+1) Go to the PC machine running NT named "burner" in the lab and log in as 
+     user "ship" in the "ADMIN" domain.
+
+2) Put a blank CDR in the CD writer.
+     Wait for the lights to stop blinking.  The CD is now ready.
+
+3) Run the "Make GemFire CD" shortcut found on the desktop
+
+4) Now we are ready to start making the CD.  For this example we will make
+     a master CD for GemFire 4.0 for Solaris (partnumber 13-10-4.0-0-0-0).
+
+     In this DOS window it will say:
+        Serial number (for masters, use 'release'):
+     Type in release and enter.
+
+     You then MAY now be asked if you wish to include some part numbers
+     which we generally put on all disks sent to customers.  For this
+     master we do NOT need these so respond with "n" for "no" to each of
+     these queries.
+
+     You will now be prompted:
+        Product part numbers to add (or "?" for menu):
+     Type in the part number 13-10-4.0-0-0-0 and enter
+
+     or if the product archive you need is listed as a package you can 
+     select it. 
+
+     You will now be prompted:
+        Please choose an action
+         1. add products                     4. show status
+         2. remove a product                 5. make the CDRom dirs!
+         3. change serial                    6. quit (no creation)
+
+     Type in 4 and enter and verify the part number that is displayed.
+     You will then get the same prompt again and now type in 5 and enter.
+     The script will now pull the files needed from inventory and put
+     them on the PC's local disk.
+
+     When finished pulling files the burner program will be brought up 
+     automatically.  Click OK to start the burn.  When done remove the CD 
+     and apply the proper label.
+
+6) Exit the CD Burner program.
+
+7) Exit the DOS window.
+
+8) Now make the sources CD by repeating steps 3 through 7 with another
+     blank CD and using the sources part number (in the example this part
+     number would be 1013-10-4.0-0-0-0).
+
+9) Within 30 days of the release we must update all customers with Source
+   Escrow (need to write up these procedures).
+

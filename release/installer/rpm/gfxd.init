@@ -1,0 +1,212 @@
+#!/bin/bash
+#
+#       /etc/rc.d/init.d/gfxd
+#
+#       Pivotal GemFire XD service init script
+#
+# chkconfig: - 64 36
+# description: Pivotal GemFire XD
+# config: /etc/sysconfig/gfxd
+
+# Source function library.
+. /etc/init.d/functions
+
+# Source config
+if [ -f /etc/sysconfig/gfxd ] ; then
+   . /etc/sysconfig/gfxd
+else
+   SERVICE_NAME="Pivotal GemFire XD"
+   GFXD_DIR=/usr/lib/gphd/gfxd
+   GFXD=${GFXD_DIR}/bin/gfxd
+   GFXD_DATA_DIR=/var/lib/gphd/gfxd
+   GFXD_SERVER_DIR=${GFXD_DATA_DIR}/server
+   GFXD_LOG_DIR=/var/log/gphd/gfxd
+   GFXD_LOG_FILE=gfxdserver.log
+   GFXD_USER=gfxd
+   GFXD_GROUP=gpadmin
+   # preferipv4 was necessary in 1.0 but has been fixed in 1.0.1
+   #GFXD_ARGS=-J-Djava.net.preferIPv4Stack=true
+   #Values are: no|local|remote
+   LOCATOR=no
+   CLIENT_BIND_ADDRESS=localhost
+   CLIENT_PORT=1527
+   CLIENT_PORT_WITH_LOCATOR=1529
+fi
+
+# Enable output during startup for troubleshooting
+DEBUG=no
+ 
+
+if [ -x "/sbin/runuser" ]; then
+   SU="/sbin/runuser -s /bin/sh"
+else
+   SU="/bin/su -s /bin/sh"
+fi
+
+RETVAL=0
+
+start() {
+
+   if [[ $LOCATOR  = "local" || $LOCATOR = "locator_only" ]]; then
+      # Start up the local locator instance
+      if [ $LOCATOR = "locator_only" ]; then
+         echo -n "Starting $SERVICE_NAME Locator: "
+      else
+         echo -n '   '"Starting $SERVICE_NAME Locator: "
+      fi
+      mkdir -p ${GFXD_LOCATOR_DIR}
+      chown ${GFXD_USER}:${GFXD_GROUP} ${GFXD_LOCATOR_DIR}
+      if [ $DEBUG = yes ]; then
+         echo -n "DEBUG: $GFXD locator start -dir=${GFXD_LOCATOR_DIR} -log-file=${GFXD_LOCATOR_LOG_DIR}/${GFXD_LOCATOR_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${CLIENT_PORT} $GFXD_LOCATOR_ARGS" 
+         $SU - ${GFXD_USER} -c "$GFXD locator start -dir=${GFXD_LOCATOR_DIR} -log-file=${GFXD_LOCATOR_LOG_DIR}/${GFXD_LOCATOR_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${CLIENT_PORT} $GFXD_LOCATOR_ARGS"  
+         RETVAL=$?
+      else
+         $SU - ${GFXD_USER} -c "$GFXD locator start -dir=${GFXD_LOCATOR_DIR} -log-file=${GFXD_LOCATOR_LOG_DIR}/${GFXD_LOCATOR_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${CLIENT_PORT} $GFXD_LOCATOR_ARGS" > /dev/null 2>&1 
+         RETVAL=$?
+      fi
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+      if [ $LOCATOR = "locator_only" ]; then
+         return 0
+      fi
+   fi
+
+   if [ ! -d ${GFXD_SERVER_DIR} ]; then
+      mkdir -p ${GFXD_SERVER_DIR}
+      chown ${GFXD_USER}:${GFXD_GROUP} ${GFXD_SERVER_DIR}
+   fi
+   SERVER_CLIENT_PORT=$CLIENT_PORT
+   if [[ $LOCATOR = "local" || $LOCATOR = "remote" ]]; then
+      if [ $LOCATOR = "local" ]; then
+         # change the CLIENT_PORT to CLIENT_PORT_WITH_LOCATOR
+         SERVER_CLIENT_PORT=$CLIENT_PORT_WITH_LOCATOR
+      fi
+      # configure server for locator
+      echo -n '   '"Starting $SERVICE_NAME Server: "
+      if [ $DEBUG = yes ]; then
+         echo -n "DEBUG $GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS" 
+         $SU - ${GFXD_USER} -c "$GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS"
+         RETVAL=$?
+      else
+         $SU - ${GFXD_USER} -c "$GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -locators=${LOCATOR_IP_STRING} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS" > /dev/null 2>&1
+         RETVAL=$?
+      fi
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+
+   else
+      # start gfxdserver without a locator, defaulting to multicast
+      echo -n "Starting $SERVICE_NAME Server: "
+      if [ $DEBUG = yes ]; then
+         echo -n "DEBUG: $GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -mcast-address=${MCAST_ADDRESS} -mcast-port=${MCAST_PORT} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS"
+         $SU - ${GFXD_USER} -c "$GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -mcast-address=${MCAST_ADDRESS} -mcast-port=${MCAST_PORT} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS" 
+         RETVAL=$?
+      else
+         $SU - ${GFXD_USER} -c "$GFXD server start -dir=${GFXD_SERVER_DIR} -log-file=${GFXD_LOG_DIR}/${GFXD_LOG_FILE} -mcast-address=${MCAST_ADDRESS} -mcast-port=${MCAST_PORT} -client-bind-address=${CLIENT_BIND_ADDRESS} -client-port=${SERVER_CLIENT_PORT} $GFXD_ARGS" > /dev/null 2>&1
+         RETVAL=$?
+      fi
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+   fi
+   return 0
+}
+
+
+stop()
+{
+   if [ $LOCATOR  = "local" ]; then
+      echo -n '   '"Shutting down $SERVICE_NAME: "
+      $SU - ${GFXD_USER} -c "$GFXD server stop -dir=$GFXD_SERVER_DIR"  > /dev/null 2>&1
+      RETVAL=$?
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+      echo -n '   '"Shutting down $SERVICE_NAME Locator: "
+      $SU - ${GFXD_USER} -c "$GFXD locator stop -dir=${GFXD_LOCATOR_DIR}" > /dev/null 2>&1
+      RETVAL=$?
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+   elif [ $LOCATOR = "locator_only" ]; then
+      echo -n "Shutting down $SERVICE_NAME Locator: "
+      $SU - ${GFXD_USER} -c "$GFXD locator stop -dir=${GFXD_LOCATOR_DIR}" > /dev/null 2>&1
+      RETVAL=$?
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+   else
+      echo -n "Shutting down $SERVICE_NAME: "
+      $SU - ${GFXD_USER} -c "$GFXD server stop -dir=$GFXD_SERVER_DIR"  > /dev/null 2>&1
+      RETVAL=$?
+      if [ $RETVAL = 0 ];then
+         echo_success
+         echo
+      else
+         echo_failure
+         echo
+      fi
+   fi
+   return 0
+}
+
+status()
+{
+   if [[ $LOCATOR = "local" || $LOCATOR = "locator_only" ]]; then
+      $SU - ${GFXD_USER} -c "$GFXD locator status -dir=$GFXD_LOCATOR_DIR"
+      if [ $LOCATOR = "locator_only" ]; then
+         return 0
+      fi
+   fi
+   $SU - ${GFXD_USER} -c "$GFXD server status -dir=$GFXD_SERVER_DIR"
+}
+
+
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $SERVICE_NAME {start|stop|status|restart]"
+        exit 1
+        ;;
+esac
+exit $?
+

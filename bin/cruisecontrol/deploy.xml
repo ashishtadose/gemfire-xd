@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+
+<project name="CruiseControl.Deploy" default="deploy" basedir=".">
+
+  <!-- =================================================================== -->
+  <!-- Define the project properties                                       -->
+  <!--   project_name                                                      -->
+  <!--   buildmaster_email                                                 -->
+  <!--   group_email                                                       -->
+  <!--   svn_url                                                           -->
+  <!--   destination_dir                                                   -->
+  <!-- =================================================================== -->
+  <property environment="env"/>
+  
+  <!-- =================================================================== -->
+  <!-- Deploy cruisecontrol                                                -->
+  <!-- =================================================================== -->
+  <target name="deploy">
+    <delete dir="${destination_dir}"/>
+  
+    <mkdir dir="${destination_dir}/artifacts"/>
+    <mkdir dir="${destination_dir}/checkout"/>
+    <mkdir dir="${destination_dir}/logs"/>
+  
+    <!--
+        Cruise Control cannot handle UNC paths for the report generation.
+        Make a local copy of the webapps/cruisecontrol,
+        And have a cooresponding entry in the config.xml to point to it.
+    -->
+
+    <copy todir="${destination_dir}" overwrite="yes">
+      <fileset dir="${cruisecontrol_dir}/webapps">
+        <include name="cruisecontrol/**"/>
+        <include name="dashboard/**"/>
+        <include name="cc-config/**"/>
+      </fileset>
+    </copy>
+
+    <!-- Make local location for Jetty Logs --> 
+    <mkdir dir="${destination_dir}/cruisecontrol/jettylogs"/>
+
+    <!-- On Windows we need a build.bat to avoid DOS/Cygwin issues --> 
+    <condition property="build.script" value="${destination_dir}/checkout/${project_name}/bin/cruisecontrol/build.bat">
+      <os family="windows"/>
+    </condition>
+    <condition property="build.script" value="${destination_dir}/checkout/${project_name}/build.sh">
+      <not> <os family="windows"/> </not>
+    </condition>
+
+    <copy todir="${destination_dir}" overwrite="yes">
+      <fileset dir="${basedir}">
+        <include name="config.xml"/>
+        <include name="cruisecontrol.sh"/>
+      </fileset>
+      <filterset>
+        <filter token="PROJECT_NAME" value="${project_name}"/>
+        <filter token="BUILDMASTER_EMAIL" value="${buildmaster_email}"/>
+        <filter token="GROUP_EMAIL" value="${group_email}"/>
+        <filter token="DESTINATION_DIR" value="${destination_dir}"/>
+        <filter token="BUILD_SCRIPT" value="${build.script}"/>
+        <filter token="SMTP_SERVER" value="${smtp.server}"/>
+      </filterset>
+    </copy>
+    
+    <copy file="${cruisecontrol_dir}/dashboard-config.xml" tofile="${destination_dir}/dashboard-config.xml"/>
+
+    <copy file="${basedir}/blogresults.xsl" tofile="${destination_dir}/cruisecontrol/xsl/blogresults.xsl"/>
+
+    <chmod file="${destination_dir}/config.xml" perm="ugo-x"/>
+    <chmod file="${destination_dir}/cruisecontrol.sh" perm="ugo+x"/>
+    <chmod file="${destination_dir}//dashboard-config.xml" perm="ugo+x"/>
+    
+    <exec executable="svn" failonerror="false" output="${destination_dir}/deploy-checkout.log">
+      <arg value="co"/>
+      <arg value="${svn_url}"/>
+      <arg value="${destination_dir}/checkout/${project_name}"/>
+    </exec>
+  
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Display help on usage                                               -->
+  <!-- =================================================================== -->
+  <target name="help">
+    <echo message="ANT build targets for Branch.Deploy"/>
+    <echo message=""/>
+    <echo message="The following targets are available:"/>
+    <echo message="  deploy         Deploy custom build files"/>
+    <echo message=""/>
+    <echo message="Usage: deploy.sh project_name buildmaster_email group_email svn_url destination_dir gcm_where_cruisecontrol_dir smtp_server"/>
+    <echo message="  ex: deploy.sh trunk myname@pivotal.io rtds-dev@pivotal.io https://svn.gemstone.com/repos/gemfire/trunk /export/w2-2013-lin-04c/users/dickc/cc_trunk /export/gcm/where/java/cruisecontrol/cruisecontrol-2.8.3 mail.gemstone.com"/>
+    <echo message=""/>
+    <echo message="ant.home=${ant.home}"/>
+    <echo message="ant.file=${ant.file}"/>
+    <echo message="basedir=${basedir}"/>
+    <echo message="project_name=${project_name}"/>
+    <echo message="svn_url=${svn_url}"/>
+    <echo message="destination_dir=${destination_dir}"/>
+  </target>
+
+</project>
+

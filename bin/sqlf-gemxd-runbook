@@ -1,0 +1,127 @@
+svn revert -R . ; svn st | awk '{print $2}'| xargs rm -r ; svn st
+
+Round II
+
+find . ! -wholename '*.svn*' -wholename '*com\/vmware\/sqlfire\/*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-1
+find . ! -wholename '*.svn*' -wholename '*SQLFire*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-2
+find . ! -wholename '*.svn*' -wholename '*SQLF*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-3
+find . ! -wholename '*.svn*' -wholename './sqlfire*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-4
+find . ! -wholename '*.svn*' -wholename '*sqlfire*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-5
+find . ! -wholename '*.svn*' -wholename '*sqlf*' -type f | awk -f /home/soubhikc/sqlf-gemxd.awk | xargs -ti{} bash -c {} | tee out-6
+#-- sleeping, so that above changes gets committed to the disk.
+sleep 60s
+
+#===============
+svn rename --parents ./sqlfire/SQLFireTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.cs ./gemfirexd/GemFireXDTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.cs 
+svn rename --parents ./sqlfire/SQLFireTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.Designer.cs ./gemfirexd/GemFireXDTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.Designer.cs 
+svn rename --parents ./sqlfire/SQLFireTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.resx ./gemfirexd/GemFireXDTests/csharp/adonet-auto/AdoNetTest.WIN/AdoNetTest\ Runner.resx 
+svn rename sqlfire/SQLFireTests/benchmark/tpcc/BenchmarkSQL-2.3.2/run/params/benchmarkparams.sh gemfirexd/GemFireXDTests/benchmark/tpcc/BenchmarkSQL-2.3.2/run/params/benchmarkparams.sh
+#===============
+sleep 240s
+
+perl -e "s/com\/vmware\/sqlfire/com\/pivotal\/gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 10s
+perl -e "s/com\_vmware\_sqlfire/com_pivotal_gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 10s
+perl -e "s/com\.vmware\.sqlfire/com.pivotal.gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 10s
+perl -e "s/com\.vmware\:sqlfire/com.pivotal:gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+
+sleep 60s
+perl -e "s/namespace vmware/namespace pivotal/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 10s
+perl -e "s/namespace sqlfire/namespace gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 10s
+perl -e "s/com::vmware::sqlfire/com::pivotal::gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/VMware/Pivotal/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+
+sleep 60s
+perl -e "s/SQLFIRE/GEMFIREXD/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+perl -e "s/Sqlfire/Gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+perl -e "s/sqlfire/gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+perl -e "s/Sqlf/Gfxd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+perl -e "s/sqlf/gfxd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 60s
+perl -e "s/SQLFire/GemFireXD/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+perl -e "s/SQLF/GFXD/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+sleep 20s
+
+#--- reversal changes.
+perl -e "s/GFXDeatureNotSupportedException/SQLFeatureNotSupportedException/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/StandardGFXDunction/StandardSQLFunction/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/NoArgGFXDunction/NoArgSQLFunction/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+
+perl -e "s/com::vmware::gemfirexd/com::pivotal::gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/vmware.name./pivotal.name./g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/vmware.vendor/pivotal.vendor/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/com.vmware:gemfirexd/com.pivotal:gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+
+
+#--- ODBC
+changed namespace
+  com::vmware::gemfirexd  ->   com::pivotal::gemfirexd
+
+Replaced following tokens:
+  SQL_API_GFXDETCH        ->   SQL_API_SQLFETCH
+  SQL_API_GFXDETCHSCROLL  ->   SQL_API_SQLFETCHSCROLL
+  SQL_API_GFXDREEHANDLE   ->   SQL_API_SQLFREEHANDLE
+  SQL_API_GFXDREESTMT     ->   SQL_API_SQLFREESTMT 
+  GFXDreeHandle           ->   SQLFreeHandle
+  GFXDetch                ->   SQLFetch
+  GFXDetchScroll          ->   SQLFetchScroll
+  GFXDreeStmt             ->   SQLFreeStmt
+  GFXDoreignKeys          ->   SQLForeignKeys
+  GFXDoreignKeysW         ->   SQLForeignKeysW
+  testGFXDreeHandle       ->   testSQLFreeHandle
+  testGFXDetch            ->   testSQLFetch
+  testGFXDetchScroll      ->   testSQLFetchScroll
+  testGFXDreeStmt         ->   testSQLFreeStmt
+  testGFXDoreignKeys      ->   testSQLForeignKeys
+
+Renamed Following files:
+  testGFXDreeHandle.cpp   ->   testSQLFreeHandle.cpp
+  testGFXDetch.cpp        ->   testSQLFetch.cpp
+  testGFXDetchScroll.cpp  ->   testSQLFetchScroll.cpp
+  testGFXDreeStmt.cpp     ->   testSQLFreeStmt.cpp
+  testGFXDoreignKeys.cpp  ->   testSQLForeignKeys.cpp
+
+Added include file name GemFireXDHelper.h in all unit tests.
+
+
+
+
+
+
+#--- eclipse transition
+cp -r ../cheetah_dev_May13/.externalToolBuilders .
+cp ../cheetah_dev_May13/copy_sqlf_resources.xml .
+cp ../cheetah_dev_May13/.classpath .
+cp ../cheetah_dev_May13/.project .
+mv .externalToolBuilders/SQLFireCopyResources.launch .externalToolBuilders/GemFireXDCopyResources.launch; 
+mv copy_sqlf_resources.xml copy_gfxd_resources.xml; 
+perl -e "s/vmware/pivotal/g;s/SQLFire/GemFireXD/g;s/sqlfire/gemfirexd/g;s/sqlf/gfxd/g;s/cheetah_dev_May13/gemfirexd_rebrand_Dec13/g" -pi $(ls copy_gfxd_resources.xml .classpath .externalToolBuilders/*.launch .project)
+
+
+
+#gfxd-rebuild-shared-library
+#LicenseManagerFactory.COMPONENT_ID_SQLFIRE
+
+
+#--TODO
+perl -e "s/cheetah/gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+perl -e "s/helios/gemfirexd/g" -pi $( find . ! -wholename "*.svn*"  ! -name "open_source_licenses.txt*" ! -wholename "*AdoNetTest.WIN*" -type f)
+cp -r /gcm/where/sqlfire/ to have a copy as /gcm/where/gemfirexd
+cp -r /gcm/where/java/sqlfireDesigner /soubhikc2/wrk/w/gcm/where/java/gemfirexdDesigner
+
+# not touching 'com.vmware' .. findbugs.xml, licencecheck, GFToSlf4jBridge.java, tests/vsphere/vijava/VIJavaUtil.java etc. plus 'com.vmware.vfabric' packages
+
+find . ! -wholename '*.svn*' ! -wholename './sqlfire*' -exec grep 'com.vmware' {} + 
+find . ! -wholename '*.svn*' ! -wholename './sqlfire*' -exec grep 'com.vmware' {} + | grep -v 'com\.vmware'
+#Binary file ./gemfirexd/GemFireXDTests/lib/JPMCDAP.jar matches
+#Binary file ./gemfirexd/GemFireXDTests/lib/Books.jar matches
+

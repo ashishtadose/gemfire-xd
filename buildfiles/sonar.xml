@@ -1,0 +1,58 @@
+<project name="sonar">
+
+  <taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml"/>
+
+  <!-- Set global Sonar properties -->
+  <property name="sonar.host.url" value="http://brazil.gemstone.com:9000"/>
+  <property name="sonar.jdbc.url" value="jdbc:mysql://brazil.gemstone.com:3306/sonar?useUnicode=true&amp;characterEncoding=utf8"/>
+  <property name="sonar.jdbc.driverClassName" value="com.mysql.jdbc.Driver"/>
+  <property name="sonar.jdbc.username" value="sonar"/>
+  <property name="sonar.jdbc.password" value="sonar"/>
+
+  <target name="gf-sonar" depends="props">
+    <!-- Get Build Number -->
+    <property file="${build.dir}/build.number"/>
+    <property file="${build.dir}/lastUpdate.txt"/>
+
+    <property name="sonar.projectKey" value="com.vmware:gemfire" />
+    <property name="sonar.projectName" value="GemFire" />
+    <property name="sonar.projectVersion" value="${gemfire.version} b${build.number}" />
+    <property name="sonar.projectDescription" value="Pivotal GemFire - Revision ${build.number}"/>
+    <property name="sonar.artifact.path" value="${product.lib.dir}/${gemfire.jar.name}"/>
+    <property name="sonar.branch" value="${source.branch}"/>
+    <property name="sonar.java.source" value="1.7"/>
+    <property name="sonar.sources" value="${src.dir}"/>
+    <property name="sonar.binaries" value="${classes.dir}"/>
+    <property name="sonar.tests" value="${basedir}/tests"/>
+    <property name="sonar.dynamicAnalysis" value="reuseReports"/>
+    <property name="sonar.jacoco.reportPath" value="${osbuild.dir}/codecoverage.exec"/>
+    <property name="sonar.junit.reportsPath" value="${tests.results.dir}/xml-reports"/>
+    <sonar:sonar xmlns:sonar="antlib:org.sonar.ant"/>
+  </target>
+
+  <target name="gfxd-sonar" depends="props,-gfxd-props">
+    <!-- Get Build Number -->
+    <property file="${build.dir}/build.number"/>
+    <property file="${build.dir}/lastUpdate.txt"/>
+    
+    <property name="sonar.projectName" value="GemFireXD"/>
+    <property name="sonar.projectKey" value="com.pivotal:gemfirexd" />
+    <property name="sonar.projectDescription" value="GemFire XD - Revision ${build.number}"/>
+    <property name="sonar.artifact.path" value="${gemfirexd.jar}"/>
+    <property name="sonar.branch" value="${source.branch}"/>
+    <property name="sonar.java.source" value="1.7"/>
+    <property name="sonar.sources" value="${basedir}/src,gemfirexd/java/shared,gemfirexd/java/engine,gemfirexd/java/client,gemfirexd/java/ddlutils/src/main/java,gemfirexd/java/drda,gemfirexd/java/storeless"/>
+    <property name="sonar.exclusions" value="com/pivotal/gemfirexd/internal/impl/sql/compile/**/*.java,**/generated/**,**/**/ddl/DDLConflatable.java,gemfirexd/java/engine/com/pivotal/gemfirexd/internal/engine/sql/compile/SQLMatcherTokenManager.java,gemfirexd/java/engine/com/pivotal/gemfirexd/internal/impl/sql/compile/SQLParserTokenManager.java"/>
+    <property name="sonar.projectVersion" value="${gemfirexd.version} b${build.number}" />
+    <property name="sonar.binaries" value="${osbuild.dir}/classes,${osbuild.dir}/gemfirexd/classes"/>
+    <property name="sonar.tests" value="${basedir}/tests,${basedir}/gemfirexd/GemFireXDTests"/>
+    <property name="sonar.jacoco.reportPath" value="${osbuild.dir}/codecoverage.exec"/>
+    <property name="sonar.junit.reportsPath" value="${tests.results.dir}/xml-reports"/>
+    <property name="sonar.libraries" value="${osbuild.dir}/product-gfxd/lib/*.jar"/>
+    <property name="sonar.trac.url" value="https://svn.gemstone.com/trac/gemfire"/>
+    <property name="sonar.scm.url" value="scm:svn:https://svn.gemstone.com/repos/gemfire/branches/gemfirexd_rebrand_Dec13"/>
+    <property name="sonar.findbugs.timeout" value="1200000"/>
+    <sonar:sonar xmlns:sonar="antlib:org.sonar.ant"/>
+  </target>
+
+</project>

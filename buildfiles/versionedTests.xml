@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="-compile-tests" name="versioned-tests">
+
+ <macrodef name="set-versioned.osbuild.dir">
+    <attribute name="prefix"/>
+    <sequential>
+      <property name="versioned.osbuild.dir" value="${osbuild.dir.@{prefix}}"/> 
+    </sequential>
+  </macrodef>
+  <!-- Compiles the test code for a given test Version -->
+  <target name="-versioned-props"> 
+    <description>Compiles the GemFire 5.7 test code
+      It does not build any GemFire product code.</description>
+    
+    <macrodef name="set-versioned.osbuild.dir">
+      <attribute name="prefix"/>
+      <sequential>
+        <property name="versioned.osbuild.dir" 
+          value="${osbuild.dir.@{prefix}}"/> 
+      </sequential>
+    </macrodef>
+    
+    <property name="versioned.tests.src.dir" value="${basedir}"/>
+    <basename property="basedir.basename" file="${basedir}"/>
+    <property name="versioned.tests.out.dir" value="${osbuild.dir}/${basedir.basename}"/>
+    <property name="versioned.tests.classes.dir" value="${versioned.tests.out.dir}/classes"/>
+    <set-versioned.osbuild.dir prefix="${basedir.basename}"/>
+    <property name="versioned.product.dir" value="${versioned.osbuild.dir}/product"/>
+    <available file="${versioned.osbuild.dir}" property="versioned.osbuild.dir.notfound"/>
+  </target> 
+
+  <!-- Compiles the test code for a given test Version -->
+  <target name="-compile-tests" depends="-versioned-props" if="versioned.osbuild.dir.notfound"> 
+    <description>Compiles the GemFire 5.7 test code
+      It does not build any GemFire product code.</description>
+    <mkdir dir="${versioned.tests.classes.dir}"/>
+    <javac executable="${javac.primary}/bin/javac" source="1.7" fork="yes" memoryMaximumSize="160m" debug="on" deprecation="off" destdir="${versioned.tests.classes.dir}" includeAntRuntime="true" nowarn="off" optimize="off" encoding="UTF-8"> 
+      <src path="${versioned.tests.src.dir}"/>
+
+      <exclude name="**/BshServlet.java"/>
+      <exclude name="hydra/gemfirexd/**"/>
+      <exclude name="hydraconfig/gemfirexd/**"/>
+      <exclude name="hydratest/version/gemfirexd/**"/>
+      <exclude name="sql/**"/>
+      <exclude name="cacheperf/comparisons/gemfirexd/**"/>
+      <exclude name="cacheperf/poc/hitachi/**"/>
+      <exclude name="objects/query/largeobject/**"/>
+      <exclude name="objects/query/sector/**"/>
+
+      <include name="**/*.java"/>
+
+      <classpath>
+        <pathelement location="${javac.primary}/lib/tools.jar"/>
+        <pathelement location="${versioned.product.dir}/lib/${antlr.jar.name}"/>
+        <pathelement location="${versioned.product.dir}/lib/${gemfire.jar.name}"/>
+        <pathelement location="${versioned.product.dir}/lib/${mx4j.jar.name}"/>
+        <pathelement location="${versioned.product.dir}/lib/${mx4j-remote.jar.name}"/>
+        <pathelement location="${versioned.product.dir}/lib/${mx4j-tools.jar.name}"/>
+        <pathelement location="${versioned.product.dir}/lib/${mail.jar.name}"/>
+        <pathelement location="${oracle.jdbc.jar}"/>
+        <pathelement location="${tests.classes.dir}"/>
+      </classpath>
+    </javac>
+
+    <!-- Copy template artifacts into classes directory -->
+    <copy todir="${versioned.tests.classes.dir}/lib" file="${templates.dir}/security/authz5_5.dtd"/>
+    <copy todir="${versioned.tests.classes.dir}/lib" file="${templates.dir}/security/authz6_0.dtd"/>
+
+    <!-- Copy some files -->
+    <copy todir="${versioned.tests.classes.dir}">
+      <fileset dir="${versioned.tests.src.dir}">
+        <include name="lib/*.xml"/>
+        <include name="lib/**/*.keystore"/>
+        <include name="lib/**/publickeyfile"/>
+       </fileset>
+    </copy>
+  </target>
+
+  <!--<target name="-clean-tests" depends="-versioned-props" unless="versioned.osbuild.dir.nofound"> -->
+  <target name="-clean-tests" depends="-versioned-props"> 
+    <delete dir="${versioned.tests.classes.dir}"/>
+  </target>
+</project>

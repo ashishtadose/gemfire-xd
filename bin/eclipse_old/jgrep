@@ -1,0 +1,11 @@
+#! /bin/bash
+# -----------
+# Script for running a grep using glimpse.
+#
+# Usage:
+# 1.  Cd to the top directory of your checkout
+# 2.  bash bin/eclipse/jgerp <grep-args>
+# -----------
+
+glimpsedir=$PWD/.glimpse
+glimpse -H $glimpsedir "$@"
